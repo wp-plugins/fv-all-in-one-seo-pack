@@ -62,6 +62,13 @@ If you have to upgrade manually simply repeat the installation steps and re-enab
 
 **If upgrading, please back up your database first!**
 
+== Screenshots ==
+
+1. FV All in One SEO meta box - only the important things remain, the others can be turned on in options
+
+2. FV All in One SEO options screen
+
+
 == Frequently Asked Questions ==
 
 Please read these **[FAQs](http://semperfiwebdesign.com/documentation/all-in-one-seo-pack/all-in-one-seo-faq/)** before requesting
