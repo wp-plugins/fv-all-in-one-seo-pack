@@ -11,7 +11,9 @@ Automatically optimizes your Wordpress blog for Search Engines (Search Engine Op
 
 == Description ==
 
-**Optimizes** your Wordpress blog for Search Engines (**Search Engine Optimization**).
+**A nice and simplified version of All in One SEO Pack!**
+
+Optimizes your Wordpress blog for Search Engines (Search Engine Optimization).
 
 **[Download now!](http://foliovision.com/downloads/fv-all-in-one-seo-pack.zip)**
 
