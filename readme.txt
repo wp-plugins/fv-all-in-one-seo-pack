@@ -65,7 +65,6 @@ If you have to upgrade manually simply repeat the installation steps and re-enab
 == Screenshots ==
 
 1. FV All in One SEO meta box - only the important things remain, the others can be turned on in options
-
 2. FV All in One SEO options screen
 
 
