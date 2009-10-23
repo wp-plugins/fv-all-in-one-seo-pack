@@ -5,6 +5,8 @@ Requires at least: 1.5
 Tested up to: 2.8.4
 Stable tag: trunk
 
+A nice and simplified version of All in One SEO Pack!
+
 Automatically optimizes your Wordpress blog for Search Engines (Search Engine Optimization).
 
 == Description ==
