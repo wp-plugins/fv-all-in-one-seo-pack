@@ -72,5 +72,18 @@ If you have to upgrade manually simply repeat the installation steps and re-enab
 
 == Frequently Asked Questions ==
 
-Please read these **[FAQs](http://semperfiwebdesign.com/documentation/all-in-one-seo-pack/all-in-one-seo-faq/)** before requesting
-**[My Plugin Support Forum](http://semperfiwebdesign.com/forum/)**
+= So what's the advantage of this plugin over the original All in One SEO pack ? =
+
+The usage is simpler as the keywords field is disabled by default. And the Wordpress excerpts can be turned of for descriptions.
+
+= Can I turn this keywords field back on? =
+
+Yes you can. Check out 'Add keywords field to post editing screen' in plugin options.
+
+= Why would anyone want to turn of the Wordpress excerpts for the descriptions? =
+
+If you are doing some custom stuff (for example) with your templates, it might come handy. We need it.
+
+= What about the rest of the original plugin functionality? =
+
+It's all there.
