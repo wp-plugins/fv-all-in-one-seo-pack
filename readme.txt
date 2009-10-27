@@ -72,11 +72,11 @@ If you have to upgrade manually simply repeat the installation steps and re-enab
 
 == Frequently Asked Questions ==
 
-= So what's the advantage of this plugin over the original All in One SEO pack ? =
+= So what's the advantage of this plugin over the original All in One SEO Pack ? =
 
 The usage is simpler as the keywords field is disabled by default. And the Wordpress excerpts can be turned of for descriptions.
 
-= Can I turn this keywords field back on? =
+= Can I turn the keywords field back on? =
 
 Yes you can. Check out 'Add keywords field to post editing screen' in plugin options.
 
