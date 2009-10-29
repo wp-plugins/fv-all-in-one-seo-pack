@@ -1,5 +1,5 @@
 === FV All in One SEO Pack ===
-Contributors: FolioVision, hallsofmontezuma
+Contributors: FolioVision
 Tags: post,google,seo,meta,meta keywords,meta description,title,posts,plugin, search engine optimization
 Requires at least: 1.5
 Tested up to: 2.8.4
