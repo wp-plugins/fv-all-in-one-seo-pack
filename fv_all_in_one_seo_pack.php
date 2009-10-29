@@ -3,7 +3,7 @@
 /*
 Plugin Name: FV All in One SEO Pack
 Plugin URI: http://foliovision.com/seo-tools/wordpress/plugins/
-Description: Out-of-the-box SEO for your Wordpress blog. A slightly modified version of <a href="http://michaeltorbert.com">Michael Torbert</a>'s famous <a href="http://semperfiwebdesign.com">All in One SEO Pack</a> | <a href="options-general.php?page=all-in-one-seo-pack/aioseop.class.php">Options configuration panel</a>
+Description: Out-of-the-box SEO for your Wordpress blog. A slightly modified version of <a href="http://michaeltorbert.com">Michael Torbert</a>'s famous <a href="http://semperfiwebdesign.com">All in One SEO Pack</a> | <a href="options-general.php?page=fv-all-in-one-seo-pack/aioseop.class.php">Options configuration panel</a>
 Version: 1.6.7
 Author: Foliovision
 Author URI: http://foliovision.com
