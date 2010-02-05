@@ -189,7 +189,8 @@ class FV_Simpler_SEO_Pack
 			}
 		}
 
-		if ($fvseop_options['aiosp_rewrite_titles']     || 1>0)
+		///	Let's do this also if longer title is specified
+		if ($fvseop_options['aiosp_rewrite_titles']     || get_post_meta($post->ID, "_aioseop_title", true) )
 		{
 			ob_start(array($this, 'output_callback_for_title')); // this ob_start is matched with ob_end_flush in wp_head
 		}
@@ -1959,7 +1960,7 @@ function countChars(field, cntfield)
   <input type="hidden" name="nonce-fvseopedit" value="<?php echo esc_attr(wp_create_nonce('edit-fvseopnonce')) ?>" />
 
         <p>
-            <?php _e('Long Title:', 'fv_seo') ?> <abbr title="Displayed in browser toolbar and search engine results">(?)</abbr>
+            <?php _e('Long Title:', 'fv_seo') ?> <abbr title="Displayed in browser toolbar and search engine results. It will replace your post title format defined by your template on this single post/page. For advanced customization use Rewrite Titles in Advanced Options.">(?)</abbr>
             <input class="input" value="<?php echo $title ?>" type="text" name="fvseo_title" onkeydown="countChars(document.post.fvseo_title,document.post.lengthT)" onkeyup="countChars(document.post.fvseo_title,document.post.lengthT)" />
             <br />
             <input id="lengthT" class="inputcounter" readonly="readonly" type="text" name="lengthT" size="3" maxlength="3" value="<?php echo strlen($title);?>" />
