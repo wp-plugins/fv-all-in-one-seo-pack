@@ -43,6 +43,13 @@ Some features:
 * Keywords field can be turned off
 * Usage of WP post excerpts can be turned off
 
+== Changelog ==
+
+= 1.6.9 =
+* fix to support hosts without Multibye Support in PHP
+
+= 1.6.8 =
+* First public version.
 
 == Installation ==
 
