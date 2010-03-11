@@ -49,7 +49,15 @@ Some features:
 * fix to support hosts without Multibye Support in PHP
 
 = 1.6.8 =
-* First public version.
+* total core rewrite, with the help of Mark Jaquith to overcome XSS cross scripting dangers in the original All in One SEO Pack plugin
+* completely simplified user interface
+* intelligent, non-intrusive defaults created. No need to configure advanced options. Wordpress and FV All in One SEO plugin will take care of all fundamental SEO out of the box.
+* please excuse the lag between updates. Someone started deleting All in One SEO plugin forks and competitors from the Wordpress plugin directory so we were unable to release our improvements properly until now. You will see a hole in the Wordpress.org downloads on account of these mysterious disappearances.
+
+
+= 1.6.7 =
+* first release
+* created from All in One SEO Pack 1.6.7 because we missed some options
 
 == Installation ==
 
