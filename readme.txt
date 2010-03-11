@@ -2,8 +2,8 @@
 Contributors: FolioVision
 Tags: post,google,seo,meta,meta keywords,meta description,title,posts,plugin, search engine optimization
 Requires at least: 1.5
-Tested up to: 2.8.4
-Stable tag: trunk
+Tested up to: 2.9.2
+Stable tag: 1.6.9
 
 Simple and effective SEO. Non-invasive, elegant. Ideal for client facing projects.
 
