@@ -3,7 +3,7 @@
 Plugin Name: FV All in One SEO Pack
 Plugin URI: http://foliovision.com/seo-tools/wordpress/plugins/fv-all-in-one-seo-pack
 Description: Simple and effective SEO. Non-invasive, elegant. Ideal for client facing projects. | <a href="options-general.php?page=fv-all-in-one-seo-pack/fv-all-in-one-seo-pack.php">Options configuration panel</a>
-Version: 1.6.9
+Version: 1.6.10
 Author: Foliovision
 Author URI: http://foliovision.com
 */
@@ -515,7 +515,7 @@ class FV_Simpler_SEO_Pack
 	/**
 	 * Make a string's first character uppercase.
 	 */
-	function capitalize($str)
+	function capitalize($s)
 	{
 		$s = trim($s);
     $tokens = explode(' ', $s);
@@ -525,7 +525,7 @@ class FV_Simpler_SEO_Pack
     }
     $s = implode(' ', $tokens);
     return $s;
-		///return mb_convert_case($str, MB_CASE_TITLE, 'UTF-8');
+		///return mb_convert_case($s, MB_CASE_TITLE, 'UTF-8');
 	}
 	
 	function is_static_front_page()

@@ -3,7 +3,7 @@ Contributors: FolioVision
 Tags: post,google,seo,meta,meta keywords,meta description,title,posts,plugin, search engine optimization
 Requires at least: 1.5
 Tested up to: 2.9.2
-Stable tag: 1.6.9
+Stable tag: 1.6.10
 
 Simple and effective SEO. Non-invasive, elegant. Ideal for client facing projects.
 
@@ -44,6 +44,9 @@ Some features:
 * Usage of WP post excerpts can be turned off
 
 == Changelog ==
+
+= 1.6.10 =
+* small bug fix
 
 = 1.6.9 =
 * fix to support hosts without Multibye Support in PHP
