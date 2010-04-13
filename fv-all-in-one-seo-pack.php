@@ -2264,7 +2264,7 @@ $fvseop_options = get_option('aioseop_options');
 
 function fvseop_mrt_mkarry()
 {
-	$nfvseop_options = array(
+	$nfvseop_options = array(  //  todo - merge with reset options
 		"aiosp_can"=>1,
 		"aiosp_home_title"=>null,
 		"aiosp_home_description"=>'',
