@@ -1699,7 +1699,7 @@ class FV_Simpler_SEO_Pack
 				'home_google_site_verification_meta_tag' => '',
 				'aiosp_use_tags_as_keywords' => 1,
 				///	Addition
-                                "aiosp_search_noindex"=>1,
+        'aiosp_search_noindex'=>1,
 				'aiosp_dont_use_excerpt'=>0,
 				'aiosp_show_keywords'=>0,
 				'aiosp_show_titleattribute'=>0,
@@ -2270,7 +2270,7 @@ function fvseop_mrt_mkarry()
 		"aiosp_home_description"=>'',
 		"aiosp_home_keywords"=>null,
 		"aiosp_max_words_excerpt"=>'something',
-		"aiosp_rewrite_titles"=>1,
+		"aiosp_rewrite_titles"=>0,
 		"aiosp_post_title_format"=>'%post_title% | %blog_title%',
 		"aiosp_page_title_format"=>'%page_title% | %blog_title%',
 		"aiosp_category_title_format"=>'%category_title% | %blog_title%',
@@ -2280,24 +2280,27 @@ function fvseop_mrt_mkarry()
 		"aiosp_description_format"=>'%description%',
 		"aiosp_404_title_format"=>'Nothing found for %request_words%',
 		"aiosp_paged_format"=>' - Part %page%',
-		"aiosp_use_categories"=>0,
+		"aiosp_use_categories"=>1,
 		"aiosp_dynamic_postspage_keywords"=>1,
-		"aiosp_category_noindex"=>1,
-		"aiosp_archive_noindex"=>1,
+		"aiosp_category_noindex"=>0,
+		"aiosp_archive_noindex"=>0,
 		"aiosp_tags_noindex"=>0,
-		"aiosp_cap_cats"=>1,
-		"aiosp_generate_descriptions"=>1,
+		"aiosp_cap_cats"=>0,
+		"aiosp_generate_descriptions"=>0,
 		"aiosp_debug_info"=>null,
 		"aiosp_post_meta_tags"=>'',
 		"aiosp_page_meta_tags"=>'',
 		"aiosp_home_meta_tags"=>'',
-		'aiosp_home_google_site_verification_meta_tag' => '',
+		'home_google_site_verification_meta_tag' => '',
 		'aiosp_use_tags_as_keywords' => 1,
-		"aiosp_dont_use_excerpt"=>0,
-		"aiosp_show_keywords"=>0,
-		"aiosp_show_disable"=>0,
-		"aiosp_show_titleattribute"=>0
+		///	Addition
+    'aiosp_search_noindex'=>1,
+		'aiosp_dont_use_excerpt'=>0,
+		'aiosp_show_keywords'=>0,
+		'aiosp_show_titleattribute'=>0,
+		'aiosp_show_disable'=>0
 		);
+		///	End of addition
 
 	if (get_option('aiosp_post_title_format'))
 	{
