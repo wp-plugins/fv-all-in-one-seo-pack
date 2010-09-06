@@ -1099,7 +1099,7 @@ class FV_Simpler_SEO_Pack
 		}
 		elseif (is_single())
 		{
-			$title = $this->internationalize( /*wp_title('', false)*/ get_the_title() );
+			$title = $this->internationalize( wp_title('', false) /*, get_the_title() */ );
 		}
 		elseif (is_search() && isset($s) && !empty($s))
 		{
@@ -1123,7 +1123,7 @@ class FV_Simpler_SEO_Pack
 		}
 		elseif (is_page())
 		{
-			$title = $this->internationalize( /*wp_title('', false)*/ get_the_title() );
+			$title = $this->internationalize( wp_title('', false) /*, get_the_title() */ );
 		}
 		elseif (function_exists('is_tag') && is_tag())
 		{
@@ -1231,7 +1231,7 @@ class FV_Simpler_SEO_Pack
 				
 				if (!$title)
 				{
-					$title = $this->internationalize( /*wp_title('', false)*/ get_the_title() );
+					$title = $this->internationalize( wp_title('', false) /*, get_the_title() */ );
 				}
 			}
 
@@ -1323,7 +1323,7 @@ class FV_Simpler_SEO_Pack
 				
 				if (!$title)
 				{
-					$title = $this->internationalize( /*wp_title('', false)*/ get_the_title() );
+					$title = $this->internationalize( wp_title('', false) /*, get_the_title() */ );
 				}
                                 
                                 if( $fvseop_options['aiosp_rewrite_titles'] ) {
