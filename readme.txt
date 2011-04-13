@@ -1,9 +1,9 @@
-=== FV All in One SEO Pack ===
+=== FV Simpler SEO ===
 Contributors: FolioVision
 Tags: post,google,seo,meta,meta keywords,meta description,title,posts,plugin, search engine optimization
 Requires at least: 1.5
 Tested up to: 3.0
-Stable tag: 1.6.11
+Stable tag: 1.6.12
 
 Simple and effective SEO. Non-invasive, elegant. Ideal for client facing projects.
 
@@ -45,6 +45,13 @@ Some features:
 
 == Changelog ==
 
+= Version 1.6.12 - 13 April 2011 =
+* Search Engines Results Page preview
+* Wordpress post title now appears in Long title field if no Long title is specified for easier editing
+* Bugfix - less db queries on wp_list_pages menus
+* Bugfix - is_static_posts_page bug (used for title instead of is_static_front_page)
+* Experimental - optional custom canonical link field
+
 = Version 1.6.11 - 30 July 2010 =
 * Wordpress 3.0 warning message removed
 
@@ -57,7 +64,7 @@ Some features:
 = Version 1.6.8 - 4 February 2010 =
 * total core rewrite, with the help of Mark Jaquith to overcome XSS cross scripting dangers in the original All in One SEO Pack plugin
 * completely simplified user interface
-* intelligent, non-intrusive defaults created. No need to configure advanced options. Wordpress and FV All in One SEO plugin will take care of all fundamental SEO out of the box.
+* intelligent, non-intrusive defaults created. No need to configure advanced options. Wordpress and FV Simpler SEO plugin will take care of all fundamental SEO out of the box.
 * please excuse the lag between updates. Someone started deleting All in One SEO plugin forks and competitors from the Wordpress plugin directory so we were unable to release our improvements properly until now. You will see a hole in the Wordpress.org downloads on account of these mysterious disappearances.
 
 = Version 1.6.7 - 23 October 2009 =
@@ -72,7 +79,7 @@ manually.
 1. You can either use the automatic plugin installer or your FTP program to upload it to your wp-content/plugins directory
 the top-level folder. Don't just upload all the php files and put them in `/wp-content/plugins/`.
 1. Activate the plugin through the 'Plugins' menu in WordPress
-1. Visit your SEO options (*Options - FV All in One SEO Pack*) for Wordpress 2.3.x, (*Settings - FV All in One SEO Pack*) for Wordpress 2.5.x-2.8.x 
+1. Visit your SEO options (*Options - FV Simpler SEO*) for Wordpress 2.3.x, (*Settings - FV Simpler SEO*) for Wordpress 2.5.x-2.8.x 
 1. Configure any options as desired
 1. That's it!
 
@@ -82,8 +89,8 @@ If you have to upgrade manually simply repeat the installation steps and re-enab
 
 == Screenshots ==
 
-1. FV All in One SEO Pack meta box - only the important things remain, the others can be turned on in options
-2. FV All in One SEO Pack options screen
+1. FV Simpler SEO meta box - only the important things remain, the others can be turned on in options
+2. FV Simpler SEO options screen
 
 
 == Frequently Asked Questions ==

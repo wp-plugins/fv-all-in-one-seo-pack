@@ -1,9 +1,9 @@
 <?php
 /*
-Plugin Name: FV All in One SEO Pack
+Plugin Name: FV Simpler SEO
 Plugin URI: http://foliovision.com/seo-tools/wordpress/plugins/fv-all-in-one-seo-pack
 Description: Simple and effective SEO. Non-invasive, elegant. Ideal for client facing projects. | <a href="options-general.php?page=fv-all-in-one-seo-pack/fv-all-in-one-seo-pack.php">Options configuration panel</a>
-Version: 1.6.11
+Version: 1.6.12
 Author: Foliovision
 Author URI: http://foliovision.com
 */
@@ -461,7 +461,12 @@ class FV_Simpler_SEO_Pack
 	//-------------------------------
 
 	/** Max numbers of chars in auto-generated description */
-	var $maximum_description_length = 160;
+	//var $maximum_description_length = 160;
+	var $maximum_description_length = 145;
+	
+	var $maximum_description_length_yellow = 134;
+	//var $maximum_title_length = 61;
+	var $maximum_title_length = 56;
  	
 	/** Minimum number of chars an excerpt should be so that it can be used
 	 * as description. Touch only if you know what you're doing
@@ -616,6 +621,18 @@ class FV_Simpler_SEO_Pack
 	{
 		// Loads the plugin's translated strings. 
 		load_plugin_textdomain('fv_seo', false, dirname(plugin_basename(__FILE__)));
+	}
+	
+	function remove_canonical() {
+	  if (is_single() || is_page() || $this->is_static_posts_page()) {
+	    global $wp_query, $fvseop_options;
+		  $post = $wp_query->get_queried_object();
+		
+  	  $custom_canonical = trim( get_post_meta($post->ID, "_aioseop_custom_canonical", true) );
+  		if( $custom_canonical && $fvseop_options['aiosp_show_custom_canonical'] ) {
+  		  remove_action('wp_head', 'rel_canonical');
+  		}
+	  }
 	}
 
 	/**
@@ -909,9 +926,23 @@ class FV_Simpler_SEO_Pack
 			echo wp_kses($meta_string, array('meta' => array('name' => array(), 'content' => array()))) . "\n";
 		}
 
-		if ($fvseop_options['aiosp_can'])
+    /// Modification  2010/11/30, adding custom_canonical url
+    
+    /// check if meta is present
+    if (is_single() || is_page() || $this->is_static_posts_page()) {
+		  $custom_canonical = trim( get_post_meta($post->ID, "_aioseop_custom_canonical", true) );
+    }
+		///
+		
+		//if ($fvseop_options['aiosp_can'])
+		if ($fvseop_options['aiosp_can'] || ( $custom_canonical && $fvseop_options['aiosp_show_custom_canonical']  ) )
+		/// End of modification
 		{
-			$url = $this->fvseo_mrt_get_url($wp_query);
+		  if( $custom_canonical && $fvseop_options['aiosp_show_custom_canonical'] ) {
+		    $url = $custom_canonical;
+		  } else {
+			  $url = $this->fvseo_mrt_get_url($wp_query);
+		  }
 
 			if ($url)
 			{
@@ -1099,7 +1130,7 @@ class FV_Simpler_SEO_Pack
 		}
 		elseif (is_single())
 		{
-			$title = $this->internationalize( wp_title('', false) /*, get_the_title() */ );
+			$title = $this->internationalize( /*wp_title('', false)*/ get_the_title() );
 		}
 		elseif (is_search() && isset($s) && !empty($s))
 		{
@@ -1123,7 +1154,7 @@ class FV_Simpler_SEO_Pack
 		}
 		elseif (is_page())
 		{
-			$title = $this->internationalize( wp_title('', false) /*, get_the_title() */ );
+			$title = $this->internationalize( /*wp_title('', false)*/ get_the_title() );
 		}
 		elseif (function_exists('is_tag') && is_tag())
 		{
@@ -1231,7 +1262,7 @@ class FV_Simpler_SEO_Pack
 				
 				if (!$title)
 				{
-					$title = $this->internationalize( wp_title('', false) /*, get_the_title() */ );
+					$title = $this->internationalize( /*wp_title('', false)*/ get_the_title() );
 				}
 			}
 
@@ -1301,7 +1332,10 @@ class FV_Simpler_SEO_Pack
 			
 			$header = $this->replace_title($header, $title);
 		}
-		elseif (is_page() || $this->is_static_posts_page())
+		/// Modification  2011/01/26  - possibly a bugfix
+		elseif (is_page() || $this->is_static_front_page())
+		//elseif (is_page() || $this->is_static_posts_page())
+		/// End of modification
 		{
 			// we're not in the loop :(
 			$authordata = get_userdata($post->post_author);
@@ -1323,7 +1357,7 @@ class FV_Simpler_SEO_Pack
 				
 				if (!$title)
 				{
-					$title = $this->internationalize( wp_title('', false) /*, get_the_title() */ );
+					$title = $this->internationalize( /*wp_title('', false)*/ get_the_title() );
 				}
                                 
                                 if( $fvseop_options['aiosp_rewrite_titles'] ) {
@@ -1490,6 +1524,41 @@ class FV_Simpler_SEO_Pack
 		
 		if (is_array($posts))
 		{
+         /// optimalization HACKs by peter
+         /// Pre-cache post meta and tags and categories if needed and if WP version permits it
+         $aIDs = array();
+         foreach( $posts as $objPost ) $aIDs[] = $objPost->ID;
+
+         if( function_exists( 'update_meta_cache' ) ) update_meta_cache( 'post', $aIDs );
+         if( ( $fvseop_options['aiosp_use_tags_as_keywords'] || ( $fvseop_options['aiosp_use_categories'] && !is_page() ) )
+               && function_exists( 'wp_get_object_terms' )
+               && function_exists( 'wp_cache_add' ) )
+         {
+            $aTax = array();
+            if( $fvseop_options['aiosp_use_tags_as_keywords'] ) $aTax[] = 'post_tag';
+            if( $fvseop_options['aiosp_use_categories'] && !is_page() ) $aTax[] = 'category';
+
+            $aRawTerms = wp_get_object_terms( $aIDs, $aTax, array( 'orderby' => 'count', 'order' => 'DESC', 'fields' => 'all_with_object_id' ) );
+            $aTags = array();
+            $aCats = array();
+
+            foreach( $aRawTerms as $objTerm ){
+               if( !isset( $aTags[$objTerm->object_id] ) ) $aTags[$objTerm->object_id] = array();
+               if( !isset( $aCats[$objTerm->object_id] ) ) $aCats[$objTerm->object_id] = array();
+
+               if( 'category' == $objTerm->taxonomy ) $aCats[$objTerm->object_id][] = $objTerm;
+               if( 'post_tag' == $objTerm->taxonomy ) $aTags[$objTerm->object_id][] = $objTerm;
+            }
+
+            if( $fvseop_options['aiosp_use_categories'] && !is_page() )
+               foreach( $aCats as $id => $aPostCats )
+                  wp_cache_add( $id, $aPostCats, 'category_relationships');
+            if( $fvseop_options['aiosp_use_tags_as_keywords'] )
+               foreach( $aTags as $id => $aPostTags )
+                  wp_cache_add( $id, $aPostTags, 'post_tag_relationships');
+         }
+
+
 			foreach ($posts as $post)
 			{
 				if ($post)
@@ -1595,12 +1664,14 @@ class FV_Simpler_SEO_Pack
 			$fvseo_disable = $_POST["fvseo_disable"];
 			$fvseo_titleatr = $_POST["fvseo_titleatr"];
 			$fvseo_menulabel = $_POST["fvseo_menulabel"];
+			$custom_canonical = $_POST["fvseo_custom_canonical"];			
 				
 			delete_post_meta($id, '_aioseop_keywords');
 			delete_post_meta($id, '_aioseop_description');
 			delete_post_meta($id, '_aioseop_title');
 			delete_post_meta($id, '_aioseop_titleatr');
 			delete_post_meta($id, '_aioseop_menulabel');
+			delete_post_meta($id, '_aioseop_custom_canonical');			
 		
 			if ($this->is_admin())
 			{
@@ -1617,7 +1688,7 @@ class FV_Simpler_SEO_Pack
 				add_post_meta($id, '_aioseop_description', $description);
 			}
 
-			if (isset($title) && !empty($title))
+			if (isset($title) && !empty($title) && $title != get_the_title( $id ) )
 			{
 				add_post_meta($id, '_aioseop_title', $title);
 			}
@@ -1636,6 +1707,11 @@ class FV_Simpler_SEO_Pack
 			{
 				add_post_meta($id, '_aioseop_disable', $fvseo_disable);
 			}
+
+			if (isset($custom_canonical) && !empty($custom_canonical))
+			{
+				add_post_meta($id, '_aioseop_custom_canonical', str_replace(" ","%20", $custom_canonical ) );
+			}			
 		}
 	}
 
@@ -1644,7 +1720,7 @@ class FV_Simpler_SEO_Pack
 	 */
 	function admin_menu()
 	{
-		add_submenu_page('options-general.php', __('FV All in One SEO Pack', 'fvseo'), __('FV All in One SEO Pack', 'fvseo'), 'administrator', __FILE__, array($this, 'options_panel'));
+		add_submenu_page('options-general.php', __('FV Simpler SEO', 'fvseo'), __('FV Simpler SEO', 'fvseo'), 'administrator', __FILE__, array($this, 'options_panel'));
 	}
 
 	function options_panel()
@@ -1669,7 +1745,6 @@ class FV_Simpler_SEO_Pack
 
 			delete_option('aioseop_options');
 
-			///	Some changes to this defaults
 			$res_fvseop_options = array(
 				"aiosp_can"=>0,
 				"aiosp_home_title"=>null,
@@ -1702,9 +1777,10 @@ class FV_Simpler_SEO_Pack
 				///	Addition
         'aiosp_search_noindex'=>1,
 				'aiosp_dont_use_excerpt'=>0,
-				'aiosp_show_keywords'=>0,
+				'aiosp_show_keywords'=>0,				
 				'aiosp_show_titleattribute'=>0,
-				'aiosp_show_disable'=>0
+				'aiosp_show_disable'=>0,
+				'aiosp_show_custom_canonical'=>0				
 				);
 				///	End of addition
 				
@@ -1751,9 +1827,10 @@ class FV_Simpler_SEO_Pack
 			$fvseop_options['aiosp_ex_pages'] = $_POST['fvseo_ex_pages'];
 			$fvseop_options['aiosp_use_tags_as_keywords'] = $_POST['fvseo_use_tags_as_keywords'];
 			///	Addition
-                        $fvseop_options['aiosp_search_noindex'] = $_POST['fvseo_search_noindex'];
+      $fvseop_options['aiosp_search_noindex'] = $_POST['fvseo_search_noindex'];
 			$fvseop_options['aiosp_dont_use_excerpt'] = $_POST['fvseo_dont_use_excerpt'];
 			$fvseop_options['aiosp_show_keywords'] = $_POST['fvseo_show_keywords'];
+			$fvseop_options['aiosp_show_custom_canonical'] = $_POST['fvseo_show_custom_canonical'];
 			$fvseop_options['aiosp_show_titleattribute'] = $_POST['fvseo_show_titleattribute'];
 			$fvseop_options['aiosp_show_disable'] = $_POST['fvseo_show_disable'];
 			///	End of addition
@@ -1831,7 +1908,8 @@ function toggleVisibility(id)
             </p>
             
 
-                <div style="border-left: 1px solid #ddd; padding-left: 10px; margin-left: 20px; text-align:left; display:none" id="fvseo_user_interface_options">
+                <div style="border-left: 1px solid #ddd; padding-left: 10px; margin-left: 20px; text-align:left; 
+                <?php if( !$fvseop_options['aiosp_show_keywords'] && !$fvseop_options['aiosp_show_custom_canonical'] && !$fvseop_options['aiosp_show_titleattribute'] && !$fvseop_options['aiosp_show_disable'] ) echo 'display: none;' ?>" id="fvseo_user_interface_options">
                             <p>
                                 <a style="cursor:pointer;" title="<?php _e('Click for Help!', 'fv_seo')?>" onclick="toggleVisibility('fvseo_show_keywords_tip');">
                                 <?php _e('Add keywords field to post editing screen:', 'fv_seo')?>
@@ -1843,6 +1921,28 @@ function toggleVisibility(id)
                                  ?>
                                 </div>
                             </p>
+                            
+                            <p>
+                                <a style="cursor:pointer;" title="<?php _e('Click for Help!', 'fv_seo')?>" onclick="toggleVisibility('fvseo_show_custom_canonical_tip');">
+                                <?php _e('Experimental - Use Custom Canonical URL field:', 'fv_seo')?>
+                                </a>
+                                <input type="checkbox" name="fvseo_show_custom_canonical" <?php if ($fvseop_options['aiosp_show_custom_canonical']) echo "checked=\"1\""; ?>/>
+                                <script type="text/javascript">
+                                jQuery("input[name='fvseo_show_custom_canonical']").change( function() {
+                                  if( jQuery(this).is(':checked') ) {
+                                    if( confirm( 'Are you sure you want to turn on this feature? Using wrong custom canonical URLs can damage your site SEO rankings.'+"\n"+"\n"+' If you are not sure, then leave this off and Wordpress will take care of it on its own.' ) ) {
+                                    } else {
+                                      jQuery(this).removeAttr('checked');
+                                    }
+                                  }
+                                });
+                                </script>
+                                <div style="max-width:500px; text-align:left; display:none" id="fvseo_show_custom_canonical_tip">
+                                <?php
+                                _e("Use this feature only if you are sure you want to enter custom canonical URLs. This is not affected by the \"Canonical URLs\" Advanced Option (bellow).", 'fv_seo');
+                                 ?>
+                                </div>
+                            </p>                            
 
                             <p>
                                 <a style="cursor:pointer;" title="<?php _e('Click for Help!', 'fv_seo')?>" onclick="toggleVisibility('fvseo_show_titleattribute_tip');">
@@ -2211,7 +2311,7 @@ function toggleVisibility(id)
                 <a style="cursor:pointer;" title="<?php _e('Click for Help!', 'fv_seo')?>" onclick="toggleVisibility('fvseo_home_google_site_verification_meta_tag_tip');">
                   <?php _e('Google Verification Meta Tag:', 'fv_seo')?>
                 </a> <abbr title="We recommend you to use a single file instead for Google verification">(?)</abbr><br />
-                <textarea cols="65" rows="1" name="fvseo_home_google_site_verification_meta_tag"><?php echo htmlspecialchars(stripcslashes($fvseop_options['aiosp_home_google_site_verification_meta_tag']))?></textarea>
+                <textarea cols="57" rows="1" name="fvseo_home_google_site_verification_meta_tag"><?php echo htmlspecialchars(stripcslashes($fvseop_options['aiosp_home_google_site_verification_meta_tag']))?></textarea>
                 <div style="max-width:500px; text-align:left; display:none" id="fvseo_home_google_site_verification_meta_tag_tip">
     <?php
     _e('What you enter here will be copied verbatim to your header on the home page. Webmaster Tools provides the meta tag in XHTML syntax.', 'fv_seo');
@@ -2266,7 +2366,7 @@ $fvseop_options = get_option('aioseop_options');
 function fvseop_mrt_mkarry()
 {
 	$nfvseop_options = array(  //  todo - merge with reset options
-		"aiosp_can"=>0,
+		"aiosp_can"=>1,
 		"aiosp_home_title"=>null,
 		"aiosp_home_description"=>'',
 		"aiosp_home_keywords"=>null,
@@ -2331,7 +2431,10 @@ function fvseop_list_pages($content)
 {
 	$url = preg_replace(array('/\//', '/\./', '/\-/'), array('\/', '\.', '\-'), get_option('siteurl'));
 	$pattern = '/<li class="page_item page-item-(\d+)([^\"]*)"><a href=\"([^\"]+)" title="([^\"]+)">([^<]+)<\/a>/i';
-
+  /// db optimization
+  preg_match_all( '~page-item-(\d+)~', $content, $ids );
+  if( function_exists( 'update_meta_cache' ) && count( $ids[1] ) > 0 ) { update_meta_cache( 'post', $ids[1] ); }
+  ///
 	return preg_replace_callback($pattern, "fvseop_filter_callback", $content);
 }
 
@@ -2377,14 +2480,22 @@ function fvseo_meta()
 	{
 		$post_id = $post_id->ID;
 	}
-	
+	$url = str_replace('http://','',get_permalink());
  	$keywords = esc_attr(htmlspecialchars(stripcslashes(get_post_meta($post_id, '_aioseop_keywords', true))));
 	$title = esc_attr(htmlspecialchars(stripcslashes(get_post_meta($post_id, '_aioseop_title', true))));
+	$custom_canonical = esc_attr(htmlspecialchars(stripcslashes(get_post_meta($post_id, '_aioseop_custom_canonical', true))));
 	$description = esc_attr(htmlspecialchars(stripcslashes(get_post_meta($post_id, '_aioseop_description', true))));
 	$fvseo_meta = esc_attr(htmlspecialchars(stripcslashes(get_post_meta($post_id, '_aioseop_meta', true))));
 	$fvseo_disable = esc_attr(htmlspecialchars(stripcslashes(get_post_meta($post_id, '_aioseop_disable', true))));
 	$fvseo_titleatr = esc_attr(htmlspecialchars(stripcslashes(get_post_meta($post_id, '_aioseop_titleatr', true))));
-	$fvseo_menulabel = esc_attr(htmlspecialchars(stripcslashes(get_post_meta($post_id, '_aioseop_menulabel', true))));	
+	$fvseo_menulabel = esc_attr(htmlspecialchars(stripcslashes(get_post_meta($post_id, '_aioseop_menulabel', true))));
+	
+	if( $title ) {
+	  $title_preview = 	$title;
+	} elseif( $title_preview = get_the_title( $post_id ) ) {
+	} else {
+	  $title_preview = "Fill in your title";
+	}
 	
 	$fvseop_options = get_option('aioseop_options');
 	
@@ -2399,13 +2510,17 @@ function countChars(field, cntfield)
 	  	document.getElementById('length1').style.backgroundColor = 'red';
 	  	document.getElementById('length1').style.color = 'black';
 	  }
+	  else if( field.value.length > <?php echo $fvseo->maximum_description_length_yellow; ?> ) {
+	  	document.getElementById('length1').style.backgroundColor = 'yellow';
+	  	document.getElementById('length1').style.color = 'black';
+	  }
 	  else {
 	  	document.getElementById('length1').style.backgroundColor = 'white';
 	  	document.getElementById('length1').style.color = '#000';
 	  }
   }
   else if( field.name == 'fvseo_title' ) {
-	  if( field.value.length > 60 ) {
+	  if( field.value.length > <?php echo $fvseo->maximum_title_length; ?> ) {
 	  	document.getElementById('lengthT').style.backgroundColor = 'red';
 	  	document.getElementById('lengthT').style.color = 'black';
 	  }
@@ -2415,6 +2530,69 @@ function countChars(field, cntfield)
 	  }
   }
 }
+function fvseo_timeout() {
+  FVSimplerSEO_updateTitle();
+  FVSimplerSEO_updateTitleFromWPTitle();
+  FVSimplerSEO_updateMeta();
+  FVSimplerSEO_updateLink();
+  window.setTimeout("fvseo_timeout();", 1000);
+}
+function FVSimplerSEO_updateLink()
+{
+  if( jQuery( "#sample-permalink" ).length > 0 ) {
+    url = jQuery("#sample-permalink").text();
+    url = url.replace( 'http://', '' );
+    jQuery("#fvseo_href").html(url);
+  }
+}
+function FVSimplerSEO_updateTitleFromWPTitle()
+{
+  if( jQuery( "#fvseo_title_input" ).hasClass( 'linked-to-wp-title' ) ) {
+    jQuery( "#fvseo_title_input" ).val( jQuery( "#title" ).val() );
+  }
+}
+function FVSimplerSEO_updateMeta()
+{
+  meta = jQuery("#fvseo_description_input").val();
+  meta_add_dots = '';
+  if( meta.length > <?php echo $fvseo->maximum_description_length; ?> ) {
+    meta_add_dots = ' ...';
+  }
+  meta = meta.substr(0, <?php echo $fvseo->maximum_description_length; ?>) + meta_add_dots;
+  if(meta == ''){
+    meta = 'Fill in your meta description';
+  }
+  jQuery("p#fvseo_meta").html(meta);
+}
+function FVSimplerSEO_updateTitle()
+{
+  title = jQuery("#fvseo_title_input").val();
+  title_add_dots = '';
+  if( title.length > <?php echo $fvseo->maximum_title_length; ?> ) {
+    title_add_dots = ' ...';
+  }
+  title = title.substr(0, <?php echo $fvseo->maximum_title_length; ?>) + title_add_dots;
+  if (title == ''){
+    if( jQuery("#title").val() ) {
+      title = jQuery("#title").val();
+    } else {
+      title = 'Fill in your title';
+    }
+  }
+  url = jQuery("#sample-permalink").text();
+  jQuery("h2#fvseo_title").html( '<a href="'+url+'">'+title+'</a>');
+}
+jQuery(document).ready(function($) {
+  window.setTimeout("fvseo_timeout();", 500);
+  <?php if( !$title ) : ?>
+  if( jQuery( "#title" ).length > 0 ) {
+    jQuery( "#fvseo_title_input" ).val( jQuery( "#title" ).val() );
+    jQuery( "#fvseo_title_input" ).css( 'color', '#bbb' );
+    jQuery( "#fvseo_title_input" ).addClass( 'linked-to-wp-title' );
+  }
+  jQuery( "#fvseo_title_input" ).click( function() { jQuery( this ).removeClass( 'linked-to-wp-title' ); jQuery( this ).css( 'color', '#000' ); } );
+  <?php endif; ?>
+});
 </script>
 <style type="text/css">
 #fvsimplerseopack th { font-size: 90%; } 
@@ -2422,26 +2600,39 @@ function countChars(field, cntfield)
 #fvsimplerseopack .input { width: 99%; }
 #fvsimplerseopack small { color: #999; }
 #fvsimplerseopack abbr { color: #999; margin-right: 10px;}
+#fvsimplerseopack small.link {color:#36C;font-size:13px;cursor:pointer;}
+#fvsimplerseopack small#fvseo_href { color: #0E774A !important; margin-left:15px; font-family:arial, sans-serif;font-style:normal;font-size:13px;}
+#fvsimplerseopack small.link:hover {text-decoration:underline;}
+#fvsimplerseopack p#fvseo_meta {margin:0;padding:0; margin-left:15px; font-family:arial, sans-serif;font-style:normal;font-size:13px;max-width:546px;}
+#fvsimplerseopack h2 {margin:0;padding:0; color:#2200c1; font-family:arial, sans-serif; font-style:normal; font-size:16px; text-decoration:underline; margin-left:15px; display:inline; padding-bottom:0px; cursor:pointer; line-height: 18px; }
+#fvsimplerseopack h2 a { color:#2200c1; }
 </style>
   <input value="fvseo_edit" type="hidden" name="fvseo_edit" />
   <input type="hidden" name="nonce-fvseopedit" value="<?php echo esc_attr(wp_create_nonce('edit-fvseopnonce')) ?>" />
 
         <p>
             <?php _e('Long Title:', 'fv_seo') ?> <abbr title="Displayed in browser toolbar and search engine results. It will replace your post title format defined by your template on this single post/page. For advanced customization use Rewrite Titles in Advanced Options.">(?)</abbr>
-            <input class="input" value="<?php echo $title ?>" type="text" name="fvseo_title" onkeydown="countChars(document.post.fvseo_title,document.post.lengthT)" onkeyup="countChars(document.post.fvseo_title,document.post.lengthT)" />
+            <input id="fvseo_title_input" class="input" value="<?php echo $title ?>" type="text" name="fvseo_title" onkeydown="countChars(document.post.fvseo_title,document.post.lengthT);" onkeyup="countChars(document.post.fvseo_title,document.post.lengthT);" />
             <br />
             <input id="lengthT" class="inputcounter" readonly="readonly" type="text" name="lengthT" size="3" maxlength="3" value="<?php echo strlen($title);?>" />
-            <small><?php _e(' characters. Most search engines use a maximum of 60 chars for the title.', 'fv_seo') ?></small>
+            <small><?php _e(' characters. Most search engines use a maximum of '.$fvseo->maximum_title_length.' chars for the title.', 'fv_seo') ?></small>
         </p>
         
         <p>
             <?php _e('Meta Description:', 'fv_seo') ?> <abbr title="Displayed in search engine results. Can be called inside of template file with &lt;?php echo get_post_meta('_aioseop_description',$post->ID); ?&gt;">(?)</abbr>
-            <textarea class="input" name="fvseo_description" rows="3" onkeydown="countChars(document.post.fvseo_description,document.post.length1)"
-              onkeyup="countChars(document.post.fvseo_description,document.post.length1)"><?php echo $description ?></textarea>
+            <textarea id="fvseo_description_input" class="input" name="fvseo_description" rows="2" onkeydown="countChars(document.post.fvseo_description,document.post.length1)"
+              onkeyup="countChars(document.post.fvseo_description,document.post.length1);"><?php echo $description ?></textarea>
             <br />
             <input id="length1" class="inputcounter" readonly="readonly" type="text" name="length1" size="3" maxlength="3" value="<?php echo strlen($description);?>" />
-            <small><?php _e(' characters. Most search engines use a maximum of 160 chars for the description.', 'fv_seo') ?></small>
+            <small><?php _e(' characters. Most search engines use a maximum of '.$fvseo->maximum_description_length.' chars for the description.', 'fv_seo') ?></small>
         </p>
+        <div>
+            <p><?php _e('SERP Preview:', 'fv_seo') ?> <abbr title="Preview of Search Engine Results Page">(?)</abbr></p>
+            <h2 id="fvseo_title"><a href="<?php the_permalink(); ?>" target="_blank"><?php echo $title_preview; ?></a></h2>
+            <p id="fvseo_meta"><?php echo ($description) ? $description : "Fill in your meta description" ?></p>
+            <small id="fvseo_href"><?php echo $url; ?></small> - <small class="link">Cached</small> - <small class="link">Similar</small>
+            <br /><br />
+        </div>
 
     <?php if ($fvseop_options['aiosp_show_keywords']) : ?>
         <p>
@@ -2449,6 +2640,13 @@ function countChars(field, cntfield)
             <input class="input" value="<?php echo $keywords ?>" type="text" name="fvseo_keywords" />
         </p>    
     <?php endif; ?>
+    
+    <?php if ($fvseop_options['aiosp_show_custom_canonical']) : ?>
+        <p>
+            <?php _e('Custom Canonical URL:', 'fv_seo') ?> <abbr title="WARNING - Google will index the URL you enter here instead of the post. Leave empty if you don't want to use it.">(?)</abbr>
+            <input class="input" value="<?php echo $custom_canonical ?>" type="text" name="fvseo_custom_canonical" />
+        </p>    
+    <?php endif; ?>    
 
 <?php if($post->post_type == 'page') { ?>
     
@@ -2482,8 +2680,8 @@ function countChars(field, cntfield)
 
 function fvseo_meta_box_add()
 {
-	add_meta_box('fvsimplerseopack',__('FV All in One SEO Pack', 'fv_seo'), 'fvseo_meta', 'post');
-	add_meta_box('fvsimplerseopack',__('FV All in One SEO Pack', 'fv_seo'), 'fvseo_meta', 'page');
+	add_meta_box('fvsimplerseopack',__('FV Simpler SEO', 'fv_seo'), 'fvseo_meta', 'post');
+	add_meta_box('fvsimplerseopack',__('FV Simpler SEO', 'fv_seo'), 'fvseo_meta', 'page');
 }
 
 if ($fvseop_options['aiosp_can'] == '1' || $fvseop_options['aiosp_can'] == 'on')
@@ -2499,6 +2697,7 @@ $fvseo = new FV_Simpler_SEO_Pack();
 add_action('init', array($fvseo, 'init'));
 add_action('template_redirect', array($fvseo, 'template_redirect'));
 add_action('wp_head', array($fvseo, 'wp_head'));
+add_action('wp_head', array($fvseo, 'remove_canonical'), 0 );
 add_action('edit_post', array($fvseo, 'post_meta_tags'));
 add_action('publish_post', array($fvseo, 'post_meta_tags'));
 add_action('save_post', array($fvseo, 'post_meta_tags'));
