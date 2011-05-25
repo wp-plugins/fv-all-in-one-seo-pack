@@ -3,7 +3,7 @@
 Plugin Name: FV Simpler SEO
 Plugin URI: http://foliovision.com/seo-tools/wordpress/plugins/fv-all-in-one-seo-pack
 Description: Simple and effective SEO. Non-invasive, elegant. Ideal for client facing projects. | <a href="options-general.php?page=fv-all-in-one-seo-pack/fv-all-in-one-seo-pack.php">Options configuration panel</a>
-Version: 1.6.12
+Version: 1.6.12.1
 Author: Foliovision
 Author URI: http://foliovision.com
 */
@@ -757,10 +757,10 @@ class FV_Simpler_SEO_Pack
 			}
 		}
 
-		if ((is_home() && $fvseop_options['aiosp_home_keywords'] &&
+		if ((is_home() && stripcslashes( $this->internationalize( $fvseop_options['aiosp_home_keywords'] ) ) &&
 			!$this->is_static_posts_page()) || $this->is_static_front_page())
 		{
-			$keywords = trim($this->internationalize($fvseop_options['aiosp_home_keywords']));
+			$keywords = trim( stripcslashes( $this->internationalize($fvseop_options['aiosp_home_keywords']) ) );
 		}
 		elseif ($this->is_static_posts_page() && !$fvseop_options['aiosp_dynamic_postspage_keywords']) // and if option = use page set keywords instead of keywords from recent posts
 		{
@@ -810,7 +810,7 @@ class FV_Simpler_SEO_Pack
 			}
 
 			// description format
-			$description_format = $fvseop_options['aiosp_description_format'];
+			$description_format = stripslashes( $fvseop_options['aiosp_description_format'] );
 
 			if (!isset($description_format) || empty($description_format))
 			{
@@ -1171,7 +1171,7 @@ class FV_Simpler_SEO_Pack
 		}
 		else if (is_404())
 		{
-			$title_format = $fvseop_options['aiosp_404_title_format'];
+			$title_format = stripslashes( $fvseop_options['aiosp_404_title_format'] );
 
 			$new_title = str_replace('%blog_title%', $this->internationalize(get_bloginfo('name')), $title_format);
 			$new_title = str_replace('%blog_description%', $this->internationalize(get_bloginfo('description')), $new_title);
@@ -1194,7 +1194,7 @@ class FV_Simpler_SEO_Pack
 
 		if (is_paged() || (isset($STagging) && $STagging->is_tag_view() && $paged))
 		{
-			$part = $this->internationalize($fvseop_options['aiosp_paged_format']);
+ 			$part = stripslashes( $this->internationalize($fvseop_options['aiosp_paged_format']) );
 
 			if (isset($part) || !empty($part))
 			{
@@ -1225,9 +1225,9 @@ class FV_Simpler_SEO_Pack
 		global $STagging;
 
     //  change homepage title only if there is some in configuration. 
-		if (is_home() && !$this->is_static_posts_page() && $this->internationalize($fvseop_options['aiosp_home_title']) != '' /*&& $fvseop_options['aiosp_rewrite_titles']*/)
+		if (is_home() && !$this->is_static_posts_page() && stripcslashes( $this->internationalize($fvseop_options['aiosp_home_title']) ) != '' /*&& $fvseop_options['aiosp_rewrite_titles']*/)
 		{
-			$title = $this->internationalize($fvseop_options['aiosp_home_title']);
+			$title = stripcslashes( $this->internationalize( $fvseop_options['aiosp_home_title'] ) );
 			
 			if (empty($title))
 			{
@@ -1267,7 +1267,7 @@ class FV_Simpler_SEO_Pack
 			}
 
                         if( $fvseop_options['aiosp_rewrite_titles'] ) {
-                            $title_format = $fvseop_options['aiosp_post_title_format'];
+                            $title_format = stripslashes( $fvseop_options['aiosp_post_title_format'] );
     
                             $new_title = str_replace('%blog_title%', $this->internationalize(get_bloginfo('name')), $title_format);
                             $new_title = str_replace('%blog_description%', $this->internationalize(get_bloginfo('description')), $new_title);
@@ -1301,7 +1301,7 @@ class FV_Simpler_SEO_Pack
 			}
 
 			$search = $this->capitalize($search);
-			$title_format = $fvseop_options['aiosp_search_title_format'];
+			$title_format = stripslashes( $fvseop_options['aiosp_search_title_format'] );
 
 			$title = str_replace('%blog_title%', $this->internationalize(get_bloginfo('name')), $title_format);
 			$title = str_replace('%blog_description%', $this->internationalize(get_bloginfo('description')), $title);
@@ -1322,7 +1322,7 @@ class FV_Simpler_SEO_Pack
 				$category_name = $this->internationalize(single_cat_title('', false));
 			}			
 
-			$title_format = $fvseop_options['aiosp_category_title_format'];
+			$title_format = stripslashes( $fvseop_options['aiosp_category_title_format'] );
 
 			$title = str_replace('%category_title%', $category_name, $title_format);
 			$title = str_replace('%category_description%', $category_description, $title);
@@ -1342,10 +1342,10 @@ class FV_Simpler_SEO_Pack
 
 			if ($this->is_static_front_page())
 			{
-				if ($this->internationalize($fvseop_options['aiosp_home_title']))
+				if ( stripcslashes( $this->internationalize($fvseop_options['aiosp_home_title']) ) )
 				{
 					//home title filter
-					$home_title = $this->internationalize($fvseop_options['aiosp_home_title']);
+					$home_title = stripcslashes( $this->internationalize( $fvseop_options['aiosp_home_title'] ) );
 					$home_title = apply_filters('fvseop_home_page_title',$home_title);
 					
 					$header = $this->replace_title($header, $home_title);
@@ -1362,7 +1362,7 @@ class FV_Simpler_SEO_Pack
                                 
                                 if( $fvseop_options['aiosp_rewrite_titles'] ) {
 
-                                    $title_format = $fvseop_options['aiosp_page_title_format'];
+                                    $title_format = stripslashes( $fvseop_options['aiosp_page_title_format'] );
     
                                     $new_title = str_replace('%blog_title%', $this->internationalize(get_bloginfo('name')), $title_format);
                                     $new_title = str_replace('%blog_description%', $this->internationalize(get_bloginfo('description')), $new_title);
@@ -1390,7 +1390,7 @@ class FV_Simpler_SEO_Pack
 			if ($tag)
 			{
 				$tag = $this->capitalize($tag);
-				$title_format = $fvseop_options['aiosp_tag_title_format'];
+				$title_format = stripslashes( $fvseop_options['aiosp_tag_title_format'] );
 	            
 				$title = str_replace('%blog_title%', $this->internationalize(get_bloginfo('name')), $title_format);
 				$title = str_replace('%blog_description%', $this->internationalize(get_bloginfo('description')), $title);
@@ -1407,7 +1407,7 @@ class FV_Simpler_SEO_Pack
 			if ($tag)
 			{
 				$tag = $this->capitalize($tag);
-				$title_format = $fvseop_options['aiosp_tag_title_format'];
+				$title_format = stripslashes( $fvseop_options['aiosp_tag_title_format'] );
 
 				$title = str_replace('%blog_title%', $this->internationalize(get_bloginfo('name')), $title_format);
 				$title = str_replace('%blog_description%', $this->internationalize(get_bloginfo('description')), $title);
@@ -1420,7 +1420,7 @@ class FV_Simpler_SEO_Pack
 		else if (is_archive()       && $fvseop_options['aiosp_rewrite_titles'])
 		{
 			$date = $this->internationalize(wp_title('', false));
-			$title_format = $fvseop_options['aiosp_archive_title_format'];
+			$title_format = stripslashes( $fvseop_options['aiosp_archive_title_format'] );
 
 			$new_title = str_replace('%blog_title%', $this->internationalize(get_bloginfo('name')), $title_format);
 			$new_title = str_replace('%blog_description%', $this->internationalize(get_bloginfo('description')), $new_title);
@@ -1433,7 +1433,7 @@ class FV_Simpler_SEO_Pack
 		}
 		else if (is_404()       && $fvseop_options['aiosp_rewrite_titles'])
 		{
-			$title_format = $fvseop_options['aiosp_404_title_format'];
+			$title_format = stripslashes( $fvseop_options['aiosp_404_title_format'] );
 
 			$new_title = str_replace('%blog_title%', $this->internationalize(get_bloginfo('name')), $title_format);
 			$new_title = str_replace('%blog_description%', $this->internationalize(get_bloginfo('description')), $new_title);

@@ -45,6 +45,9 @@ Some features:
 
 == Changelog ==
 
+= Version 1.6.12.1 - 25 May 2011 =
+* Bugfix release - slashes in title templates
+
 = Version 1.6.12 - 13 April 2011 =
 * Search Engines Results Page preview
 * Wordpress post title now appears in Long title field if no Long title is specified for easier editing
