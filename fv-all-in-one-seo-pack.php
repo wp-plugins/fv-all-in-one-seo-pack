@@ -2503,6 +2503,8 @@ function fvseo_meta()
 <script type="text/javascript">
 function countChars(field, cntfield)
 {
+  if( !field.value ) return;
+  
   cntfield.value = field.value.length;
 
   if( field.name == 'fvseo_description' ) {
