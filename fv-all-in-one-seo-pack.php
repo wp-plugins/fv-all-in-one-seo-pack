@@ -3,7 +3,7 @@
 Plugin Name: FV Simpler SEO
 Plugin URI: http://foliovision.com/seo-tools/wordpress/plugins/fv-all-in-one-seo-pack
 Description: Simple and effective SEO. Non-invasive, elegant. Ideal for client facing projects. | <a href="options-general.php?page=fv-all-in-one-seo-pack/fv-all-in-one-seo-pack.php">Options configuration panel</a>
-Version: 1.6.12.1
+Version: 1.6.13
 Author: Foliovision
 Author URI: http://foliovision.com
 */
@@ -669,7 +669,7 @@ class FV_Simpler_SEO_Pack
 		}
 
 		///	Let's do this also if longer title is specified or if it's homepage
-		if ($fvseop_options['aiosp_rewrite_titles']     || get_post_meta($post->ID, "_aioseop_title", true) || is_home() )
+		if ($fvseop_options['aiosp_rewrite_titles']     || ( is_object( $post ) && get_post_meta($post->ID, "_aioseop_title", true) ) || is_home() )
 		{
 			ob_start(array($this, 'output_callback_for_title')); // this ob_start is matched with ob_end_flush in wp_head
 		}
@@ -821,6 +821,8 @@ class FV_Simpler_SEO_Pack
 			$description = str_replace('%blog_title%', get_bloginfo('name'), $description);
 			$description = str_replace('%blog_description%', get_bloginfo('description'), $description);
 			$description = str_replace('%wp_title%', $this->get_original_title(), $description);
+			$description = trim( str_replace('%page%', $this->paged_description(), $description) );
+			$description = __( $description );
 
 			if ($fvseop_options['aiosp_can'] && is_attachment())
 			{
@@ -909,7 +911,9 @@ class FV_Simpler_SEO_Pack
 		}
 
 		// add google site verification meta tag for webmasters tools
-		$home_google_site_verification_meta_tag = stripcslashes($fvseop_options['aiosp_home_google_site_verification_meta_tag']);
+		$home_google_site_verification_meta_tag = isset( $fvseop_options['aiosp_home_google_site_verification_meta_tag'] ) ? stripcslashes($fvseop_options['aiosp_home_google_site_verification_meta_tag']) : NULL;
+		$home_yahoo_site_verification_meta_tag = isset( $fvseop_options['aiosp_home_yahoo_site_verification_meta_tag'] ) ? stripcslashes($fvseop_options['aiosp_home_yahoo_site_verification_meta_tag']) : NULL;
+		$home_bing_site_verification_meta_tag = isset( $fvseop_options['aiosp_home_bing_site_verification_meta_tag'] ) ? stripcslashes($fvseop_options['aiosp_home_bing_site_verification_meta_tag']) : NULL;
 
 		if (is_home() && !empty($home_google_site_verification_meta_tag))
 		{
@@ -919,6 +923,26 @@ class FV_Simpler_SEO_Pack
 			}
 
 			$meta_string .= wp_kses($home_google_site_verification_meta_tag, array('meta' => array('name' => array(), 'content' => array())));
+		}
+		
+		if (is_home() && !empty($home_yahoo_site_verification_meta_tag))
+		{
+			if (isset($meta_string))
+			{
+				$meta_string .= "\n";
+			}
+
+			$meta_string .= wp_kses($home_yahoo_site_verification_meta_tag, array('meta' => array('name' => array(), 'content' => array())));
+		}
+		
+		if (is_home() && !empty($home_bing_site_verification_meta_tag))
+		{
+			if (isset($meta_string))
+			{
+				$meta_string .= "\n";
+			}
+
+			$meta_string .= wp_kses($home_bing_site_verification_meta_tag, array('meta' => array('name' => array(), 'content' => array())));
 		}
 
 		if ($meta_string != null)
@@ -935,7 +959,7 @@ class FV_Simpler_SEO_Pack
 		///
 		
 		//if ($fvseop_options['aiosp_can'])
-		if ($fvseop_options['aiosp_can'] || ( $custom_canonical && $fvseop_options['aiosp_show_custom_canonical']  ) )
+		if ($fvseop_options['aiosp_can'] || ( isset( $custom_canonical ) && $fvseop_options['aiosp_show_custom_canonical']  ) )
 		/// End of modification
 		{
 		  if( $custom_canonical && $fvseop_options['aiosp_show_custom_canonical'] ) {
@@ -1070,6 +1094,31 @@ class FV_Simpler_SEO_Pack
 
 		return $link;
 	}
+	
+	
+  function paged_description($description = NULL)
+ 	{
+ 		// the page number if paged
+ 		global $paged;
+ 		global $fvseop_options;
+ 		// simple tagging support
+ 		global $STagging;
+ 
+ 		if( is_paged() )
+ 		{
+ 			$part = $this->internationalize( $fvseop_options['aiosp_paged_format'] );
+ 
+ 			if( isset($part) || !empty($part) )
+ 			{
+ 				$part = trim($part);
+ 				$part = str_replace('%page%', $paged, $part);
+ 				$description .= $part;
+ 			}
+ 		}
+ 
+ 		return $description;
+ 	}	
+ 		
 
 	function get_post_description($post)
 	{
@@ -1538,9 +1587,12 @@ class FV_Simpler_SEO_Pack
             if( $fvseop_options['aiosp_use_tags_as_keywords'] ) $aTax[] = 'post_tag';
             if( $fvseop_options['aiosp_use_categories'] && !is_page() ) $aTax[] = 'category';
 
-            $aRawTerms = wp_get_object_terms( $aIDs, $aTax, array( 'orderby' => 'count', 'order' => 'DESC', 'fields' => 'all_with_object_id' ) );
+            $aRawTerms = array();
+            if( 0 < count( $aIDs ) && 0 < count( $aTax ) )
+               $aRawTerms = wp_get_object_terms( $aIDs, $aTax, array( 'orderby' => 'count', 'order' => 'DESC', 'fields' => 'all_with_object_id' ) );
             $aTags = array();
             $aCats = array();
+
 
             foreach( $aRawTerms as $objTerm ){
                if( !isset( $aTags[$objTerm->object_id] ) ) $aTags[$objTerm->object_id] = array();
@@ -1652,19 +1704,23 @@ class FV_Simpler_SEO_Pack
 
 	function post_meta_tags($id)
 	{
-		$awmp_edit = $_POST['fvseo_edit'];
-		$nonce = $_POST['nonce-fvseopedit'];
+	  if( isset( $_POST['fvseo_edit'] ) ) {
+		  $awmp_edit = $_POST['fvseo_edit'];
+	  }
+	  if( isset( $_POST['nonce-fvseopedit'] ) ) {
+		  $nonce = $_POST['nonce-fvseopedit'];
+	  }
 
 		if (isset($awmp_edit) && !empty($awmp_edit) && wp_verify_nonce($nonce, 'edit-fvseopnonce'))
 		{
-			$keywords = $_POST["fvseo_keywords"];
-			$description = $_POST["fvseo_description"];
-			$title = $_POST["fvseo_title"];
-			$fvseo_meta = $_POST["fvseo_meta"];
-			$fvseo_disable = $_POST["fvseo_disable"];
-			$fvseo_titleatr = $_POST["fvseo_titleatr"];
-			$fvseo_menulabel = $_POST["fvseo_menulabel"];
-			$custom_canonical = $_POST["fvseo_custom_canonical"];			
+			$keywords = isset( $_POST["fvseo_keywords"] ) ? $_POST["fvseo_keywords"] : NULL;
+			$description = isset( $_POST["fvseo_description"] ) ? $_POST["fvseo_description"] : NULL;
+			$title = isset( $_POST["fvseo_title"] ) ? $_POST["fvseo_title"] : NULL;
+			$fvseo_meta = isset( $_POST["fvseo_meta"] ) ? $_POST["fvseo_meta"] : NULL;
+			$fvseo_disable = isset( $_POST["fvseo_disable"] ) ? $_POST["fvseo_disable"] : NULL;
+			$fvseo_titleatr = isset( $_POST["fvseo_titleatr"] ) ? $_POST["fvseo_titleatr"] : NULL;
+			$fvseo_menulabel = isset( $_POST["fvseo_menulabel"] ) ? $_POST["fvseo_menulabel"] : NULL;
+			$custom_canonical = isset( $_POST["fvseo_custom_canonical"] ) ? $_POST["fvseo_custom_canonical"] : NULL;		
 				
 			delete_post_meta($id, '_aioseop_keywords');
 			delete_post_meta($id, '_aioseop_description');
@@ -1734,7 +1790,7 @@ class FV_Simpler_SEO_Pack
 			$fvseop_options['aiosp_cap_cats'] = '1';
 		}
 		
-		if ($_POST['action'] && $_POST['action'] == 'fvseo_update' && $_POST['Submit_Default'] != '')
+		if( isset($_POST['action']) && $_POST['action'] == 'fvseo_update' && isset( $_POST['Submit_Default'] ) && $_POST['Submit_Default'] != '')
 		{
 			$nonce = $_POST['nonce-fvseop'];
 			
@@ -1788,7 +1844,7 @@ class FV_Simpler_SEO_Pack
 		}
 		
 		// update options
-		if ($_POST['action'] && $_POST['action'] == 'fvseo_update' && $_POST['Submit'] != '')
+		if( isset($_POST['action']) && $_POST['action'] == 'fvseo_update' && isset( $_POST['Submit'] ) && $_POST['Submit'] != '')
 		{
 			$nonce = $_POST['nonce-fvseop'];
 		
@@ -1797,42 +1853,44 @@ class FV_Simpler_SEO_Pack
 				
 			$message = __("FV All in One SEO Pack Options Updated.", 'fvseo');
 			
-			$fvseop_options['aiosp_can'] = $_POST['fvseo_can'];
-			$fvseop_options['aiosp_home_title'] = $_POST['fvseo_home_title'];
-			$fvseop_options['aiosp_home_description'] = $_POST['fvseo_home_description'];
-			$fvseop_options['aiosp_home_keywords'] = $_POST['fvseo_home_keywords'];
-			$fvseop_options['aiosp_max_words_excerpt'] = $_POST['fvseo_max_words_excerpt'];
-			$fvseop_options['aiosp_rewrite_titles'] = $_POST['fvseo_rewrite_titles'];
-			$fvseop_options['aiosp_post_title_format'] = $_POST['fvseo_post_title_format'];
-			$fvseop_options['aiosp_page_title_format'] = $_POST['fvseo_page_title_format'];
-			$fvseop_options['aiosp_category_title_format'] = $_POST['fvseo_category_title_format'];
-			$fvseop_options['aiosp_archive_title_format'] = $_POST['fvseo_archive_title_format'];
-			$fvseop_options['aiosp_tag_title_format'] = $_POST['fvseo_tag_title_format'];
-			$fvseop_options['aiosp_search_title_format'] = $_POST['fvseo_search_title_format'];
-			$fvseop_options['aiosp_description_format'] = $_POST['fvseo_description_format'];
-			$fvseop_options['aiosp_404_title_format'] = $_POST['fvseo_404_title_format'];
-			$fvseop_options['aiosp_paged_format'] = $_POST['fvseo_paged_format'];
-			$fvseop_options['aiosp_use_categories'] = $_POST['fvseo_use_categories'];
+			$fvseop_options['aiosp_can'] = isset( $_POST['fvseo_can'] ) ? $_POST['fvseo_can'] : NULL;
+			$fvseop_options['aiosp_home_title'] = isset( $_POST['fvseo_home_title'] ) ? $_POST['fvseo_home_title'] : NULL;
+			$fvseop_options['aiosp_home_description'] = isset( $_POST['fvseo_home_description'] ) ? $_POST['fvseo_home_description'] : NULL;
+			$fvseop_options['aiosp_home_keywords'] = isset( $_POST['fvseo_home_keywords'] ) ? $_POST['fvseo_home_keywords'] : NULL;
+			$fvseop_options['aiosp_max_words_excerpt'] = isset( $_POST['fvseo_max_words_excerpt'] ) ? $_POST['fvseo_max_words_excerpt'] : NULL;
+			$fvseop_options['aiosp_rewrite_titles'] = isset( $_POST['fvseo_rewrite_titles'] ) ? $_POST['fvseo_rewrite_titles'] : NULL;
+			$fvseop_options['aiosp_post_title_format'] = isset( $_POST['fvseo_post_title_format'] ) ? $_POST['fvseo_post_title_format'] : NULL;
+			$fvseop_options['aiosp_page_title_format'] = isset( $_POST['fvseo_page_title_format'] ) ? $_POST['fvseo_page_title_format'] : NULL;
+			$fvseop_options['aiosp_category_title_format'] = isset( $_POST['fvseo_category_title_format'] ) ? $_POST['fvseo_category_title_format'] : NULL;
+			$fvseop_options['aiosp_archive_title_format'] = isset( $_POST['fvseo_archive_title_format'] ) ? $_POST['fvseo_archive_title_format'] : NULL;
+			$fvseop_options['aiosp_tag_title_format'] = isset( $_POST['fvseo_tag_title_format'] ) ? $_POST['fvseo_tag_title_format'] : NULL;
+			$fvseop_options['aiosp_search_title_format'] = isset( $_POST['fvseo_search_title_format'] ) ? $_POST['fvseo_search_title_format'] : NULL;
+			$fvseop_options['aiosp_description_format'] = isset( $_POST['fvseo_description_format'] ) ? $_POST['fvseo_description_format'] : NULL;
+			$fvseop_options['aiosp_404_title_format'] = isset( $_POST['fvseo_404_title_format'] ) ? $_POST['fvseo_404_title_format'] : NULL;
+			$fvseop_options['aiosp_paged_format'] = isset( $_POST['fvseo_paged_format'] ) ? $_POST['fvseo_paged_format'] : NULL;
+			$fvseop_options['aiosp_use_categories'] = isset( $_POST['fvseo_category_noindex'] ) ? $_POST['fvseo_category_noindex'] : NULL;
 			$fvseop_options['aiosp_dynamic_postspage_keywords'] = $_POST['fvseo_dynamic_postspage_keywords'];
-			$fvseop_options['aiosp_category_noindex'] = $_POST['fvseo_category_noindex'];
-			$fvseop_options['aiosp_archive_noindex'] = $_POST['fvseo_archive_noindex'];
-			$fvseop_options['aiosp_tags_noindex'] = $_POST['fvseo_tags_noindex'];
-			$fvseop_options['aiosp_generate_descriptions'] = $_POST['fvseo_generate_descriptions'];
-			$fvseop_options['aiosp_cap_cats'] = $_POST['fvseo_cap_cats'];
-			$fvseop_options['aiosp_debug_info'] = $_POST['fvseo_debug_info'];
-			$fvseop_options['aiosp_post_meta_tags'] = $_POST['fvseo_post_meta_tags'];
-			$fvseop_options['aiosp_page_meta_tags'] = $_POST['fvseo_page_meta_tags'];
-			$fvseop_options['aiosp_home_meta_tags'] = $_POST['fvseo_home_meta_tags'];
-			$fvseop_options['aiosp_home_google_site_verification_meta_tag'] = $_POST['fvseo_home_google_site_verification_meta_tag'];
-			$fvseop_options['aiosp_ex_pages'] = $_POST['fvseo_ex_pages'];
-			$fvseop_options['aiosp_use_tags_as_keywords'] = $_POST['fvseo_use_tags_as_keywords'];
+			$fvseop_options['aiosp_category_noindex'] = isset( $_POST['fvseo_category_noindex'] ) ? $_POST['fvseo_category_noindex'] : NULL;
+			$fvseop_options['aiosp_archive_noindex'] = isset( $_POST['fvseo_archive_noindex'] ) ? $_POST['fvseo_archive_noindex'] : NULL;
+			$fvseop_options['aiosp_tags_noindex'] = isset( $_POST['fvseo_tags_noindex'] ) ? $_POST['fvseo_tags_noindex'] : NULL;
+			$fvseop_options['aiosp_generate_descriptions'] = isset( $_POST['fvseo_generate_descriptions'] ) ? $_POST['fvseo_generate_descriptions'] : NULL;
+			$fvseop_options['aiosp_cap_cats'] = isset( $_POST['fvseo_cap_cats'] ) ? $_POST['fvseo_cap_cats'] : NULL;
+			$fvseop_options['aiosp_debug_info'] = isset( $_POST['fvseo_debug_info'] ) ? $_POST['fvseo_debug_info'] : NULL;
+			$fvseop_options['aiosp_post_meta_tags'] = isset( $_POST['fvseo_post_meta_tags'] ) ? $_POST['fvseo_post_meta_tags'] : NULL;
+			$fvseop_options['aiosp_page_meta_tags'] = isset( $_POST['fvseo_page_meta_tags'] ) ? $_POST['fvseo_page_meta_tags'] : NULL;
+			$fvseop_options['aiosp_home_meta_tags'] = isset( $_POST['fvseo_home_meta_tags'] ) ? $_POST['fvseo_home_meta_tags'] : NULL;
+			$fvseop_options['aiosp_home_google_site_verification_meta_tag'] = isset( $_POST['fvseo_home_google_site_verification_meta_tag'] ) ? $_POST['fvseo_home_google_site_verification_meta_tag'] : NULL;
+			$fvseop_options['aiosp_home_bing_site_verification_meta_tag'] = isset( $_POST['fvseo_home_bing_site_verification_meta_tag'] ) ? $_POST['fvseo_home_bing_site_verification_meta_tag'] : NULL;
+			$fvseop_options['aiosp_home_yahoo_site_verification_meta_tag'] = isset( $_POST['fvseo_home_yahoo_site_verification_meta_tag'] ) ? $_POST['fvseo_home_yahoo_site_verification_meta_tag'] : NULL;						
+			$fvseop_options['aiosp_ex_pages'] = isset( $_POST['fvseo_ex_pages'] ) ? $_POST['fvseo_ex_pages'] : NULL;
+			$fvseop_options['aiosp_use_tags_as_keywords'] = isset( $_POST['fvseo_use_tags_as_keywords'] ) ? $_POST['fvseo_use_tags_as_keywords'] : NULL;
 			///	Addition
-      $fvseop_options['aiosp_search_noindex'] = $_POST['fvseo_search_noindex'];
-			$fvseop_options['aiosp_dont_use_excerpt'] = $_POST['fvseo_dont_use_excerpt'];
-			$fvseop_options['aiosp_show_keywords'] = $_POST['fvseo_show_keywords'];
-			$fvseop_options['aiosp_show_custom_canonical'] = $_POST['fvseo_show_custom_canonical'];
-			$fvseop_options['aiosp_show_titleattribute'] = $_POST['fvseo_show_titleattribute'];
-			$fvseop_options['aiosp_show_disable'] = $_POST['fvseo_show_disable'];
+      $fvseop_options['aiosp_search_noindex'] = isset( $_POST['fvseo_search_noindex'] ) ? $_POST['fvseo_search_noindex'] : NUUL;
+			$fvseop_options['aiosp_dont_use_excerpt'] = isset( $_POST['fvseo_dont_use_excerpt'] ) ? $_POST['fvseo_dont_use_excerpt'] : NULL;
+			$fvseop_options['aiosp_show_keywords'] = isset( $_POST['fvseo_show_keywords'] ) ? $_POST['fvseo_show_keywords'] : NULL;
+			$fvseop_options['aiosp_show_custom_canonical'] = isset( $_POST['fvseo_show_custom_canonical'] ) ? $_POST['fvseo_show_custom_canonical'] : NULL;
+			$fvseop_options['aiosp_show_titleattribute'] = isset( $_POST['fvseo_show_titleattribute'] ) ? $_POST['fvseo_show_titleattribute'] : NULL;
+			$fvseop_options['aiosp_show_disable'] = isset( $_POST['fvseo_show_disable'] ) ? $_POST['fvseo_show_disable'] : NULL;
 			///	End of addition
 
 			update_option('aioseop_options', $fvseop_options);
@@ -2124,6 +2182,7 @@ function toggleVisibility(id)
                         echo('<li>'); _e('%blog_description% - Your blog description', 'fv_seo'); echo('</li>');
                         echo('<li>'); _e('%description% - The original description as determined by the plugin, e.g. the excerpt if one is set or an auto-generated one if that option is set', 'fv_seo'); echo('</li>');
                         echo('<li>'); _e('%wp_title% - The original wordpress title, e.g. post_title for posts', 'fv_seo'); echo('</li>');
+                        echo('<li>'); _e('%page% - Page number for paged category archives', 'fv_seo'); echo('</li>');                        
                         echo('</ul>');
                         ?>
                     </div>
@@ -2259,7 +2318,7 @@ function toggleVisibility(id)
                 <a style="cursor:pointer;" title="<?php _e('Click for Help!', 'fv_seo')?>" onclick="toggleVisibility('fvseo_ex_pages_tip');">
                   <?php _e('Exclude Pages:', 'fv_seo')?>
                 </a><br />
-                <textarea cols="57" rows="2" name="fvseo_ex_pages"><?php echo esc_attr(stripcslashes($fvseop_options['aiosp_ex_pages']))?></textarea>
+                <textarea cols="57" rows="2" name="fvseo_ex_pages"><?php if( isset( $fvseop_options['aiosp_ex_pages'] ) ) echo esc_attr(stripcslashes($fvseop_options['aiosp_ex_pages']))?></textarea>
                 <div style="max-width:500px; text-align:left; display:none" id="fvseo_ex_pages_tip">
                   <?php _e("Enter any comma separated pages here to be excluded by All in One SEO Pack.  This is helpful when using plugins which generate their own non-WordPress dynamic pages.  Ex: <em>/forum/,/contact/</em>  For instance, if you want to exclude the virtual pages generated by a forum plugin, all you have to do is give forum or /forum or /forum/ or and any URL with the word \"forum\" in it, such as http://mysite.com/forum or http://mysite.com/forum/someforumpage will be excluded from FV All in One SEO Pack.", 'fv_seo')?>
                 </div>
@@ -2311,7 +2370,7 @@ function toggleVisibility(id)
                 <a style="cursor:pointer;" title="<?php _e('Click for Help!', 'fv_seo')?>" onclick="toggleVisibility('fvseo_home_google_site_verification_meta_tag_tip');">
                   <?php _e('Google Verification Meta Tag:', 'fv_seo')?>
                 </a> <abbr title="We recommend you to use a single file instead for Google verification">(?)</abbr><br />
-                <textarea cols="57" rows="1" name="fvseo_home_google_site_verification_meta_tag"><?php echo htmlspecialchars(stripcslashes($fvseop_options['aiosp_home_google_site_verification_meta_tag']))?></textarea>
+                <textarea cols="57" rows="1" name="fvseo_home_google_site_verification_meta_tag"><?php if( isset( $fvseop_options['aiosp_home_google_site_verification_meta_tag'] ) ) echo htmlspecialchars(stripcslashes($fvseop_options['aiosp_home_google_site_verification_meta_tag']))?></textarea>
                 <div style="max-width:500px; text-align:left; display:none" id="fvseo_home_google_site_verification_meta_tag_tip">
     <?php
     _e('What you enter here will be copied verbatim to your header on the home page. Webmaster Tools provides the meta tag in XHTML syntax.', 'fv_seo');
@@ -2324,6 +2383,30 @@ function toggleVisibility(id)
     ?>
                 </div>
             </p>
+            
+            <p>
+                <a style="cursor:pointer;" title="<?php _e('Click for Help!', 'fv_seo')?>" onclick="toggleVisibility('fvseo_home_yahoo_site_verification_meta_tag');">
+                  <?php _e('Yahoo Verification Meta Tag:', 'fv_seo')?>
+                </a><br />
+                <textarea cols="57" rows="1" name="fvseo_home_yahoo_site_verification_meta_tag"><?php if( isset( $fvseop_options['aiosp_home_yahoo_site_verification_meta_tag'] ) ) echo htmlspecialchars(stripcslashes($fvseop_options['aiosp_home_yahoo_site_verification_meta_tag']))?></textarea>
+                <div style="max-width:500px; text-align:left; display:none" id="fvseo_home_yahoo_site_verification_meta_tag">
+    <?php
+    _e('Put your Yahoo site verification tag for your homepage here.', 'fv_seo');
+    ?>
+                </div>
+            </p>
+            
+            <p>
+                <a style="cursor:pointer;" title="<?php _e('Click for Help!', 'fv_seo')?>" onclick="toggleVisibility('fvseo_home_bing_site_verification_meta_tag');">
+                  <?php _e('Bing Verification Meta Tag:', 'fv_seo')?>
+                </a><br />
+                <textarea cols="57" rows="1" name="fvseo_home_bing_site_verification_meta_tag"><?php if( isset( $fvseop_options['aiosp_home_bing_site_verification_meta_tag'] ) ) echo htmlspecialchars(stripcslashes($fvseop_options['aiosp_home_bing_site_verification_meta_tag']))?></textarea>
+                <div style="max-width:500px; text-align:left; display:none" id="fvseo_home_bing_site_verification_meta_tag">
+    <?php
+    _e('Put your Bing site verification tag for your homepage here.', 'fv_seo');
+    ?>
+                </div>
+            </p>                        
 
             <p>
 		<a style="cursor:pointer;" title="<?php _e('Click for Help!', 'fv_seo')?>" onclick="toggleVisibility('fvseo_dont_use_excerpt_tip');">
@@ -2452,16 +2535,22 @@ function fvseop_filter_callback($matches)
 	if (empty($menulabel))
 		$menulabel = $matches[4];
                
-        /// Addition
-        $longtitle = stripslashes(get_post_meta($postID, '_aioseop_title', true));
+  /// Addition
+  $longtitle = stripslashes(get_post_meta($postID, '_aioseop_title', true));
             
+  $menulabel = __( $menulabel );  
+  $longtitle = __( $longtitle );  
+  $title_attrib = __( $title_attrib );       
+  if( isset($matches[4]) ) {
+    $matches[4] = __( $matches[4] );
+  }
 		
 	if (!empty($title_attrib)) :
 		$filtered = '<li class="page_item page-item-' . $postID.$matches[2] . '"><a href="' . esc_attr($matches[3]) . '" title="' . esc_attr($title_attrib) . '">' . esc_html($menulabel) . '</a>';
-        /// Addition
-        elseif (!empty($longtitle)) :
-                $filtered = '<li class="page_item page-item-' . $postID.$matches[2] . '"><a href="' . esc_attr($matches[3]) . '" title="' . esc_attr($longtitle) . '">' . esc_html($menulabel) . '</a>';
-        /// End of addition
+  /// Addition
+  elseif (!empty($longtitle)) :
+          $filtered = '<li class="page_item page-item-' . $postID.$matches[2] . '"><a href="' . esc_attr($matches[3]) . '" title="' . esc_attr($longtitle) . '">' . esc_html($menulabel) . '</a>';
+  /// End of addition
 	else :
     	$filtered = '<li class="page_item page-item-' . $postID.$matches[2] . '"><a href="' . esc_attr($matches[3]) . '" title="' . esc_attr($matches[4]) . '">' . esc_html($menulabel) . '</a>';
 	endif;

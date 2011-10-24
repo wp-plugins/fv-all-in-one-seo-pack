@@ -45,6 +45,13 @@ Some features:
 
 == Changelog ==
 
+= Version 1.6.13 - 24 Oct 2011 =
+* Bing site verification tag support added
+* Yahoo site verification tag support added
+* qTranslate for menu labels and titles
+* page number support in Description Format.
+* Bugfixes
+
 = Version 1.6.12.1 - 25 May 2011 =
 * Bugfix release - slashes in title templates
 
