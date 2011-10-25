@@ -560,20 +560,21 @@ class FV_Simpler_SEO_Pack
 
 		$currenturl = trim(esc_url($_SERVER['REQUEST_URI'], '/'));
 
-		$excludedstuff = explode(',', $fvseop_options['aiosp_ex_pages']);
-
-		foreach ($excludedstuff as $exedd)
-		{
-			$exedd = trim($exedd);
-
-			if ($exedd)
-			{
-				if (stristr($currenturl, $exedd))
-				{
-					return true;
-				}
-			}
-		}
+    if( isset($fvseop_options['aiosp_ex_pages']) ) {
+  		$excludedstuff = explode(',', $fvseop_options['aiosp_ex_pages']);
+  		foreach ($excludedstuff as $exedd)
+  		{
+  			$exedd = trim($exedd);
+  
+  			if ($exedd)
+  			{
+  				if (stristr($currenturl, $exedd))
+  				{
+  					return true;
+  				}
+  			}
+  		}
+    }
 
 		return false;
 	}
