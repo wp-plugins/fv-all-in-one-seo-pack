@@ -3,7 +3,7 @@
 Plugin Name: FV Simpler SEO
 Plugin URI: http://foliovision.com/seo-tools/wordpress/plugins/fv-all-in-one-seo-pack
 Description: Simple and effective SEO. Non-invasive, elegant. Ideal for client facing projects. | <a href="options-general.php?page=fv-all-in-one-seo-pack/fv-all-in-one-seo-pack.php">Options configuration panel</a>
-Version: 1.6.13
+Version: 1.6.14
 Author: Foliovision
 Author URI: http://foliovision.com
 */
@@ -2514,7 +2514,7 @@ function fvseop_mrt_mkarry()
 function fvseop_list_pages($content)
 {
 	$url = preg_replace(array('/\//', '/\./', '/\-/'), array('\/', '\.', '\-'), get_option('siteurl'));
-	$pattern = '/<li class="page_item page-item-(\d+)([^\"]*)"><a href=\"([^\"]+)" title="([^\"]+)">([^<]+)<\/a>/i';
+	$pattern = '/<li class="page_item page-item-(\d+)([^\"]*)"><a href=\"([^\"]+)"[^>]*?>([^<]+)<\/a>/i';
   /// db optimization
   preg_match_all( '~page-item-(\d+)~', $content, $ids );
   if( function_exists( 'update_meta_cache' ) && count( $ids[1] ) > 0 ) { update_meta_cache( 'post', $ids[1] ); }
@@ -2524,6 +2524,11 @@ function fvseop_list_pages($content)
 
 function fvseop_filter_callback($matches)
 {
+  preg_match( '~title="([^\"]+)"~', $matches[0], $match_title );
+  if( $match_title ) {
+    $matches[4] = $match_title[1];
+  }
+  
 	if ($matches[1] && !empty($matches[1]))
 		$postID = $matches[1];
 		

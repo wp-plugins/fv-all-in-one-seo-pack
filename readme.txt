@@ -1,8 +1,8 @@
 === FV Simpler SEO ===
 Contributors: FolioVision
 Tags: post,google,seo,meta,meta keywords,meta description,title,posts,plugin, search engine optimization
-Requires at least: 1.5
-Tested up to: 3.2.1
+Requires at least: 2.7
+Tested up to: 3.3
 Stable tag: trunk 
 
 Simple and effective SEO. Non-invasive, elegant. Ideal for client facing projects.
@@ -44,6 +44,9 @@ Some features:
 * Usage of WP post excerpts can be turned off
 
 == Changelog ==
+
+= Version 1.6.14 - 15 Dec 2011 =
+* fix for Menu Label in Wordpress 3.3
 
 = Version 1.6.13 - 24 Oct 2011 =
 * Bing site verification tag support added
