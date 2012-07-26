@@ -3,7 +3,7 @@
 Plugin Name: FV Simpler SEO
 Plugin URI: http://foliovision.com/seo-tools/wordpress/plugins/fv-all-in-one-seo-pack
 Description: Simple and effective SEO. Non-invasive, elegant. Ideal for client facing projects. | <a href="options-general.php?page=fv-all-in-one-seo-pack/fv-all-in-one-seo-pack.php">Options configuration panel</a>
-Version: 1.6.14
+Version: 1.6.15
 Author: Foliovision
 Author URI: http://foliovision.com
 */
@@ -1180,7 +1180,7 @@ class FV_Simpler_SEO_Pack
 		}
 		elseif (is_single())
 		{
-			$title = $this->internationalize( /*wp_title('', false)*/ get_the_title() );
+			$title = $this->internationalize( /*wp_title('', false)*/ get_the_title($post->ID) );
 		}
 		elseif (is_search() && isset($s) && !empty($s))
 		{
@@ -1407,7 +1407,7 @@ class FV_Simpler_SEO_Pack
 				
 				if (!$title)
 				{
-					$title = $this->internationalize( /*wp_title('', false)*/ get_the_title() );
+					$title = $this->internationalize( /*wp_title('', false)*/ get_the_title($post->ID) );
 				}
                                 
                                 if( $fvseop_options['aiosp_rewrite_titles'] ) {
@@ -1715,8 +1715,25 @@ class FV_Simpler_SEO_Pack
 		if (isset($awmp_edit) && !empty($awmp_edit) && wp_verify_nonce($nonce, 'edit-fvseopnonce'))
 		{
 			$keywords = isset( $_POST["fvseo_keywords"] ) ? $_POST["fvseo_keywords"] : NULL;
-			$description = isset( $_POST["fvseo_description"] ) ? $_POST["fvseo_description"] : NULL;
-			$title = isset( $_POST["fvseo_title"] ) ? $_POST["fvseo_title"] : NULL;
+			if (function_exists('qtrans_getSortedLanguages')) {        
+        $languages = qtrans_getSortedLanguages();          
+        $title = '';
+        foreach($languages as $language) {
+          if ($_POST['fvseo_title_' . $language] != '') {
+            $title .= '<!--:' . $language . '-->' . $_POST['fvseo_title_' . $language] . '<!--:-->';
+          }
+        }                                                  
+        $description = '';
+        foreach($languages as $language) {
+          if ($_POST['fvseo_description_' . $language] != '')  {
+            $description .= '<!--:' . $language . '-->' . $_POST['fvseo_description_' . $language] . '<!--:-->';
+          }
+        }                    
+      }
+      else {        
+        $description = isset( $_POST["fvseo_description"] ) ? $_POST["fvseo_description"] : NULL;
+        $title = isset( $_POST["fvseo_title"] ) ? $_POST["fvseo_title"] : NULL;
+      }
 			$fvseo_meta = isset( $_POST["fvseo_meta"] ) ? $_POST["fvseo_meta"] : NULL;
 			$fvseo_disable = isset( $_POST["fvseo_disable"] ) ? $_POST["fvseo_disable"] : NULL;
 			$fvseo_titleatr = isset( $_POST["fvseo_titleatr"] ) ? $_POST["fvseo_titleatr"] : NULL;
@@ -1777,7 +1794,7 @@ class FV_Simpler_SEO_Pack
 	 */
 	function admin_menu()
 	{
-		add_submenu_page('options-general.php', __('FV Simpler SEO', 'fvseo'), __('FV Simpler SEO', 'fvseo'), 'administrator', __FILE__, array($this, 'options_panel'));
+		add_submenu_page('options-general.php', __('FV Simpler SEO', 'fvseo'), __('FV Simpler SEO', 'fvseo'), 'manage_options', __FILE__, array($this, 'options_panel'));
 	}
 
 	function options_panel()
@@ -2511,6 +2528,45 @@ function fvseop_mrt_mkarry()
 	//echo "<div class='updated fade' style='background-color:green;border-color:green;'><p><strong>Updating FV All in One SEO Pack configuration options in database</strong></p></div>";
 }
 
+function fvseop_nav_menu($content)
+{
+	$url = preg_replace(array('/\//', '/\./', '/\-/'), array('\/', '\.', '\-'), get_option('siteurl'));
+	$pattern = '/<li id=\"menu-item-(\d+)\" class="menu-item(.*?)menu-item-(\d+)([^\"]*)"><a href=\"([^\"]+)"[^>]*?>([^<]+)<\/a>/i';
+  /// db optimization
+  preg_match_all( '~id=\"menu-item-(\d+)\"~', $content, $ids );  
+  if( function_exists( 'update_meta_cache' ) && count( $ids[1] ) > 0 ) { update_meta_cache( 'post', $ids[1] ); }
+  
+  $menu_ids = array();
+  foreach ($ids[1] as $id) {    
+    $menu_ids[] = get_post_meta($id, '_menu_item_object_id', true); 
+  }
+  if( function_exists( 'update_meta_cache' ) && count( $menu_ids ) > 0 ) { update_meta_cache( 'post', $menu_ids ); }
+  
+  return preg_replace_callback($pattern, "fvseop_filter_menu_callback", $content);  
+}
+
+function fvseop_filter_menu_callback($matches)
+{                      
+  $postID = get_post_meta($matches[1], '_menu_item_object_id', true);      
+  $my_post = get_post( $postID );      
+           	
+	if (empty($postID))
+		$postID = get_option("page_on_front");
+				       
+  if ($my_post->post_title == $matches[6]) {
+    $menulabel = stripslashes(get_post_meta($postID, '_aioseop_menulabel', true));
+  }    
+	
+	if (empty($menulabel))
+		$menulabel = $matches[6];    
+                          
+  $menulabel = __( $menulabel );  
+  
+  $filtered = '<li id="menu-item-' . $matches[1] . '" class="menu-item ' . $matches[2] . 'menu-item-' . $matches[1] . '"><a href="' . esc_attr($matches[5]) . '">' . esc_html($menulabel) . '</a>';	
+	
+	return $filtered;
+}
+
 function fvseop_list_pages($content)
 {
 	$url = preg_replace(array('/\//', '/\./', '/\-/'), array('\/', '\.', '\-'), get_option('siteurl'));
@@ -2523,7 +2579,7 @@ function fvseop_list_pages($content)
 }
 
 function fvseop_filter_callback($matches)
-{
+{        
   preg_match( '~title="([^\"]+)"~', $matches[0], $match_title );
   if( $match_title ) {
     $matches[4] = $match_title[1];
@@ -2559,7 +2615,7 @@ function fvseop_filter_callback($matches)
   /// End of addition
 	else :
     	$filtered = '<li class="page_item page-item-' . $postID.$matches[2] . '"><a href="' . esc_attr($matches[3]) . '" title="' . esc_attr($matches[4]) . '">' . esc_html($menulabel) . '</a>';
-	endif;
+	endif;    
 	
 	return $filtered;
 }
@@ -2596,34 +2652,61 @@ function fvseo_meta()
 	
 ?>
 <script type="text/javascript">
-function countChars(field, cntfield)
+var fvseop_language = '<?php if (function_exists("qtrans_getLanguage")) echo qtrans_getLanguage(); else echo "default"; ?>';
+var fvseop_languages;
+var fvseop_active_lang = fvseop_language;
+<?php if (function_exists("qtrans_getSortedLanguages")) { ?>
+fvseop_languages =  <?php echo json_encode(qtrans_getSortedLanguages()); ?>;
+<?php } ?>
+
+function countChars(field, cntfield, lang)
 {
   if( !field.value ) return;
   
   cntfield.value = field.value.length;
 
-  if( field.name == 'fvseo_description' ) {
+  if( field.name == 'fvseo_description' || field.name == 'fvseo_description' + '_' + lang ) {
 	  if( field.value.length > <?php echo $fvseo->maximum_description_length; ?> ) {
-	  	document.getElementById('length1').style.backgroundColor = 'red';
-	  	document.getElementById('length1').style.color = 'black';
+	  	if (lang == 'default') {
+        jQuery('#lengthD').css('background', 'red').css('color', 'black');
+      }
+      else {
+        jQuery('#lengthD' + '_' + lang).css('background', 'red').css('color', 'black');
+      }
 	  }
 	  else if( field.value.length > <?php echo $fvseo->maximum_description_length_yellow; ?> ) {
-	  	document.getElementById('length1').style.backgroundColor = 'yellow';
-	  	document.getElementById('length1').style.color = 'black';
+	  	if (lang == 'default') {
+        jQuery('#lengthD').css('background', 'yellow').css('color', 'black');
+      }
+      else {
+        jQuery('#lengthD' + '_' + lang).css('background', 'yellow').css('color', 'black');
+      }
 	  }
 	  else {
-	  	document.getElementById('length1').style.backgroundColor = 'white';
-	  	document.getElementById('length1').style.color = '#000';
+	  	if (lang == 'default') {
+        jQuery('#lengthD').css('background', 'white').css('color', 'black');
+      }
+      else {
+        jQuery('#lengthD' + '_' + lang).css('background', 'white').css('color', 'black');
+      }
 	  }
   }
-  else if( field.name == 'fvseo_title' ) {
+  else if( field.name == 'fvseo_title' || field.name == 'fvseo_title' + '_' + lang ) {
 	  if( field.value.length > <?php echo $fvseo->maximum_title_length; ?> ) {
-	  	document.getElementById('lengthT').style.backgroundColor = 'red';
-	  	document.getElementById('lengthT').style.color = 'black';
+	  	if (lang == 'default') {
+        jQuery('#lengthT').css('background', 'red').css('color', 'black');
+      }
+      else {
+        jQuery('#lengthT' + '_' + lang).css('background', 'red').css('color', 'black');
+      }
 	  }
 	  else {
-	  	document.getElementById('lengthT').style.backgroundColor = 'white';
-	  	document.getElementById('lengthT').style.color = '#000';
+      if (lang == 'default') {
+        jQuery('#lengthT').css('background', 'white').css('color', 'black');
+      }
+      else {
+        jQuery('#lengthT' + '_' + lang).css('background', 'white').css('color', 'black');
+      }
 	  }
   }
 }
@@ -2643,14 +2726,23 @@ function FVSimplerSEO_updateLink()
   }
 }
 function FVSimplerSEO_updateTitleFromWPTitle()
-{
-  if( jQuery( "#fvseo_title_input" ).hasClass( 'linked-to-wp-title' ) ) {
-    jQuery( "#fvseo_title_input" ).val( jQuery( "#title" ).val() );
+{  
+  if (fvseop_language == 'default') {
+    if( jQuery( "#fvseo_title_input" ).hasClass( 'linked-to-wp-title' ) ) {
+      jQuery( "#fvseo_title_input" ).val( jQuery( "#title" ).val() );
+    }
+  }
+  else {
+    for (i = 0; i < fvseop_languages.length; i++) {
+      if (jQuery( "#fvseo_title_input_" + fvseop_languages[i] ).hasClass( 'linked-to-wp-title') ) {
+        jQuery( "#fvseo_title_input_" + fvseop_languages[i] ).val( jQuery( "#qtrans_title_" + fvseop_languages[i] ).val() );
+      }  
+    }
   }
 }
 function FVSimplerSEO_updateMeta()
 {
-  meta = jQuery("#fvseo_description_input").val();
+  meta = FVSimplerSEO_getLocalized('fvseo_description_input');
   meta_add_dots = '';
   if( meta.length > <?php echo $fvseo->maximum_description_length; ?> ) {
     meta_add_dots = ' ...';
@@ -2663,7 +2755,7 @@ function FVSimplerSEO_updateMeta()
 }
 function FVSimplerSEO_updateTitle()
 {
-  title = jQuery("#fvseo_title_input").val();
+  title = FVSimplerSEO_getLocalized('fvseo_title_input');
   title_add_dots = '';
   if( title.length > <?php echo $fvseo->maximum_title_length; ?> ) {
     title_add_dots = ' ...';
@@ -2679,16 +2771,46 @@ function FVSimplerSEO_updateTitle()
   url = jQuery("#sample-permalink").text();
   jQuery("h2#fvseo_title").html( '<a href="'+url+'">'+title+'</a>');
 }
-jQuery(document).ready(function($) {
-  window.setTimeout("fvseo_timeout();", 500);
-  <?php if( !$title ) : ?>
-  if( jQuery( "#title" ).length > 0 ) {
-    jQuery( "#fvseo_title_input" ).val( jQuery( "#title" ).val() );
-    jQuery( "#fvseo_title_input" ).css( 'color', '#bbb' );
-    jQuery( "#fvseo_title_input" ).addClass( 'linked-to-wp-title' );
+function FVSimplerSEO_getLocalized(input)
+{
+  if (fvseop_language == 'default') {
+    string = jQuery("#" + input).val();    
   }
-  jQuery( "#fvseo_title_input" ).click( function() { jQuery( this ).removeClass( 'linked-to-wp-title' ); jQuery( this ).css( 'color', '#000' ); } );
-  <?php endif; ?>
+  else {
+    string = jQuery('#' + input + '_' + fvseop_active_lang).val();
+  }    
+  return string;
+}
+jQuery(document).ready(function($) {
+  window.setTimeout("fvseo_timeout();", 500);  
+  if (fvseop_language == 'default') {
+    <?php if( !$title ) : ?>
+    if( jQuery( "#title" ).length > 0 ) {
+      //jQuery( "#fvseo_title_input" ).val( jQuery( "#title" ).val() );
+      jQuery( "#fvseo_title_input" ).css( 'color', '#bbb' );
+      jQuery( "#fvseo_title_input" ).addClass( 'linked-to-wp-title' );
+    }
+    jQuery( "#fvseo_title_input" ).focus( function() {
+      jQuery( this ).removeClass( 'linked-to-wp-title' );
+      jQuery( this ).css( 'color', '#000' );
+    } );
+    <?php endif; ?>
+  }
+  else {
+    for (i = 0; i < fvseop_languages.length; i++) {
+      if( jQuery( "#qtrans_title_" + fvseop_languages[i] ).val() == jQuery( "#fvseo_title_input_" + fvseop_languages[i] ).val() ) {
+        jQuery( "#fvseo_title_input_" + fvseop_languages[i] ).css( 'color', '#bbb' );
+        jQuery( "#fvseo_title_input_" + fvseop_languages[i] ).addClass( 'linked-to-wp-title' );
+      }
+      jQuery( "#fvseo_title_input_" + fvseop_languages[i] ).focus( function() {
+        jQuery( this ).removeClass( 'linked-to-wp-title' ); jQuery( this ).css( 'color', '#000' );
+        fvseop_active_lang = jQuery( this ).attr("id").substr('fvseo_title_input_'.length);
+      } );
+      jQuery( "#fvseo_description_input_" + fvseop_languages[i] ).focus( function() {
+        fvseop_active_lang = jQuery( this ).attr("id").substr('fvseo_description_input_'.length);
+      } );      
+    }
+  }  
 });
 </script>
 <style type="text/css">
@@ -2707,22 +2829,54 @@ jQuery(document).ready(function($) {
   <input value="fvseo_edit" type="hidden" name="fvseo_edit" />
   <input type="hidden" name="nonce-fvseopedit" value="<?php echo esc_attr(wp_create_nonce('edit-fvseopnonce')) ?>" />
 
+        <?php if (function_exists('qtrans_getSortedLanguages')) { ?>
+        <?php
+          $languages = qtrans_getSortedLanguages();          
+          foreach($languages as $language) { ?>
+            <?php            
+              $localized_title = fvseo_get_localized_string($title, $language); 
+            ?>
+            <p>
+                <?php _e('Long Title:', 'fv_seo') ?> (<?php echo qtrans_getLanguageName($language); ?>) <abbr title="Displayed in browser toolbar and search engine results. It will replace your post title format defined by your template on this single post/page. For advanced customization use Rewrite Titles in Advanced Options.">(?)</abbr>
+                <input id="fvseo_title_input_<?php echo $language; ?>" class="input" value="<?php echo $localized_title ?>" type="text" name="fvseo_title_<?php echo $language; ?>" onkeydown="countChars(document.post.fvseo_title_<?php echo $language; ?>,document.post.lengthT_<?php echo $language; ?>, '<?php echo $language ?>');" onkeyup="countChars(document.post.fvseo_title_<?php echo $language; ?>,document.post.lengthT_<?php echo $language; ?>, '<?php echo $language ?>');" />
+                <br />
+                <input id="lengthT_<?php echo $language; ?>" class="inputcounter" readonly="readonly" type="text" name="lengthT_<?php echo $language; ?>" size="3" maxlength="3" value="<?php echo strlen($localized_title);?>" />
+                <small><?php _e(' characters. Most search engines use a maximum of '.$fvseo->maximum_title_length.' chars for the title.', 'fv_seo') ?></small>
+            </p>
+                    
+        <?php } ?>
+        <?php
+          $languages = qtrans_getSortedLanguages();
+          foreach($languages as $language) { ?>
+            <?php            
+              $localized_description = fvseo_get_localized_string($description, $language);
+            ?>
+            <p>
+                <?php _e('Meta Description:', 'fv_seo') ?> (<?php echo qtrans_getLanguageName($language); ?>) <abbr title="Displayed in search engine results. Can be called inside of template file with &lt;?php echo get_post_meta('_aioseop_description',$post->ID); ?&gt;">(?)</abbr>
+                <textarea id="fvseo_description_input_<?php echo $language; ?>" class="input" name="fvseo_description_<?php echo $language; ?>" rows="2" onkeydown="countChars(document.post.fvseo_description_<?php echo $language; ?>,document.post.lengthD_<?php echo $language; ?>, '<?php echo $language ?>')"
+                  onkeyup="countChars(document.post.fvseo_description_<?php echo $language; ?>,document.post.lengthD_<?php echo $language; ?>, '<?php echo $language ?>');"><?php echo $localized_description ?></textarea>
+                <br />
+                <input id="lengthD_<?php echo $language; ?>" class="inputcounter" readonly="readonly" type="text" name="lengthD_<?php echo $language; ?>" size="3" maxlength="3" value="<?php echo strlen($localized_description);?>" />
+                <small><?php _e(' characters. Most search engines use a maximum of '.$fvseo->maximum_description_length.' chars for the description.', 'fv_seo') ?></small>
+            </p>
+        <?php } ?>
+        <?php } else { ?>
         <p>
             <?php _e('Long Title:', 'fv_seo') ?> <abbr title="Displayed in browser toolbar and search engine results. It will replace your post title format defined by your template on this single post/page. For advanced customization use Rewrite Titles in Advanced Options.">(?)</abbr>
-            <input id="fvseo_title_input" class="input" value="<?php echo $title ?>" type="text" name="fvseo_title" onkeydown="countChars(document.post.fvseo_title,document.post.lengthT);" onkeyup="countChars(document.post.fvseo_title,document.post.lengthT);" />
+            <input id="fvseo_title_input" class="input" value="<?php echo $title ?>" type="text" name="fvseo_title" onkeydown="countChars(document.post.fvseo_title,document.post.lengthT, 'default');" onkeyup="countChars(document.post.fvseo_title,document.post.lengthT, 'default');" />
             <br />
             <input id="lengthT" class="inputcounter" readonly="readonly" type="text" name="lengthT" size="3" maxlength="3" value="<?php echo strlen($title);?>" />
             <small><?php _e(' characters. Most search engines use a maximum of '.$fvseo->maximum_title_length.' chars for the title.', 'fv_seo') ?></small>
         </p>
-        
         <p>
             <?php _e('Meta Description:', 'fv_seo') ?> <abbr title="Displayed in search engine results. Can be called inside of template file with &lt;?php echo get_post_meta('_aioseop_description',$post->ID); ?&gt;">(?)</abbr>
-            <textarea id="fvseo_description_input" class="input" name="fvseo_description" rows="2" onkeydown="countChars(document.post.fvseo_description,document.post.length1)"
-              onkeyup="countChars(document.post.fvseo_description,document.post.length1);"><?php echo $description ?></textarea>
+            <textarea id="fvseo_description_input" class="input" name="fvseo_description" rows="2" onkeydown="countChars(document.post.fvseo_description,document.post.lengthD, 'default')"
+              onkeyup="countChars(document.post.fvseo_description,document.post.lengthD, 'default');"><?php echo $description ?></textarea>
             <br />
-            <input id="length1" class="inputcounter" readonly="readonly" type="text" name="length1" size="3" maxlength="3" value="<?php echo strlen($description);?>" />
+            <input id="lengthD" class="inputcounter" readonly="readonly" type="text" name="lengthD" size="3" maxlength="3" value="<?php echo strlen($description);?>" />
             <small><?php _e(' characters. Most search engines use a maximum of '.$fvseo->maximum_description_length.' chars for the description.', 'fv_seo') ?></small>
         </p>
+        <?php } ?>
         <div>
             <p><?php _e('SERP Preview:', 'fv_seo') ?> <abbr title="Preview of Search Engine Results Page">(?)</abbr></p>
             <h2 id="fvseo_title"><a href="<?php the_permalink(); ?>" target="_blank"><?php echo $title_preview; ?></a></h2>
@@ -2768,11 +2922,24 @@ jQuery(document).ready(function($) {
         </p>
     <?php endif; ?>
     
-    <script type="text/javascript">
-    countChars(document.post.fvseo_description,document.post.length1);
-    countChars(document.post.fvseo_title,document.post.lengthT);
-    </script>
+    <?php if (!function_exists('qtrans_getSortedLanguages')) { ?>
+      <script type="text/javascript">
+      countChars(document.post.fvseo_description,document.post.lengthD, 'default');
+      countChars(document.post.fvseo_title,document.post.lengthT, 'default');
+      </script>
+    <?php } ?>
 <?php
+}
+
+function fvseo_get_localized_string($string, $language)
+{
+  $strings_array = explode('&lt;!--:--&gt;', $string);
+  $language_code =  '&lt;!--:' . $language . '--&gt;';
+  foreach($strings_array as $string) {
+    if (substr($string, 0, strlen($language_code)) == $language_code) {
+      return substr($string, strlen($language_code)); 
+    }  
+  }
 }
 
 function fvseo_meta_box_add()
@@ -2781,13 +2948,14 @@ function fvseo_meta_box_add()
 	add_meta_box('fvsimplerseopack',__('FV Simpler SEO', 'fv_seo'), 'fvseo_meta', 'page');
 }
 
-if ($fvseop_options['aiosp_can'] == '1' || $fvseop_options['aiosp_can'] == 'on')
+if ($fvseop_options['aiosp_can'] == '1' || $fvseop_options['aiosp_can'] === 'on')
 {
 	remove_action('wp_head', 'rel_canonical');
 }
 
 add_action('admin_menu', 'fvseo_meta_box_add');
 add_action('wp_list_pages', 'fvseop_list_pages');
+add_action('wp_nav_menu', 'fvseop_nav_menu');
 
 $fvseo = new FV_Simpler_SEO_Pack();
 
