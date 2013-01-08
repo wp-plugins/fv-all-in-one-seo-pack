@@ -2,7 +2,7 @@
 Contributors: FolioVision
 Tags: post,google,seo,meta,meta keywords,meta description,title,posts,plugin, search engine optimization
 Requires at least: 2.7
-Tested up to: 3.4.1
+Tested up to: 3.4.2
 Stable tag: trunk 
 
 Simple and effective SEO. Non-invasive, elegant. Ideal for client facing projects.
@@ -45,6 +45,12 @@ Some features:
 * Usage of WP post excerpts can be turned off
 
 == Changelog ==
+
+= Version 1.6.17 - 7 Jan 2013 =
+* Added Shortening of URL based on longest words in link
+
+= Version 1.6.16 - 21 Dec 2012 =
+* Added warnings when post doesn't have title or description while updating or publishing
 
 = Version 1.6.15 - 26 Jul 2012 =
 * better support for qTranslate - separate title and meta description fields!

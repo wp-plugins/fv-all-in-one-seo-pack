@@ -3,7 +3,7 @@
 Plugin Name: FV Simpler SEO
 Plugin URI: http://foliovision.com/seo-tools/wordpress/plugins/fv-all-in-one-seo-pack
 Description: Simple and effective SEO. Non-invasive, elegant. Ideal for client facing projects. | <a href="options-general.php?page=fv-all-in-one-seo-pack/fv-all-in-one-seo-pack.php">Options configuration panel</a>
-Version: 1.6.15
+Version: 1.6.17
 Author: Foliovision
 Author URI: http://foliovision.com
 */
@@ -473,6 +473,8 @@ class FV_Simpler_SEO_Pack
 	 */
 	var $minimum_description_length = 1;
 
+	var $idEmptyPostName = null;
+	var $strTitleForReference = null;
 	//-------------------------------
 	// CONSTRUCTORSaioseop_
 	//-------------------------------
@@ -613,6 +615,112 @@ class FV_Simpler_SEO_Pack
 	//-------------------------------
 	// ACTIONS
 	//-------------------------------
+
+   function SortByLength( $strA, $strB ){
+      return strlen( $strB ) - strlen( $strA );
+   }
+
+   function GeneratePostSlug( $strSlug, $idPost ){
+      global $wpdb;
+
+      $aSlug = explode( '-', $strSlug );
+
+      if( 3 >= count( $aSlug ) ) return $strSlug;
+      if( 4 == count( $aSlug ) && preg_match( '~\d+$~', $aSlug[3] ) ) return $strSlug;
+      if( 20 >= strlen( $strSlug ) ) return $strSlug;
+
+      $aSlug = array_unique( $aSlug );
+      $aSortSlug = $aSlug;
+      usort( $aSortSlug, array( $this, 'SortByLength' ) );
+      $aSortSlug = array_slice( $aSortSlug, 0, 3 );
+
+      $aSlug = array_intersect( $aSlug, $aSortSlug );
+      $strSlug = implode( '-', $aSlug );
+
+      if( $idPost ){
+         $aPosts = $wpdb->get_results( "SELECT `ID` FROM `{$wpdb->posts}` WHERE `post_name` = '".$wpdb->escape( $strSlug )."' AND `ID` != {$idPost}" );
+         $i = 0;
+
+         while( count( $aPosts ) ){
+            if( $i ) $strNewSlug = $strSlug . '-' . ($i+1);
+            else $strNewSlug = $strSlug . '-1';
+
+            $i++;
+            $aPosts = $wpdb->get_results( "SELECT `ID` FROM `{$wpdb->posts}` WHERE `post_name` = '".$wpdb->escape( $strNewSlug )."' AND `ID` != {$idPost}" );
+         }
+
+         if( $strNewSlug ) $strSlug = $strNewSlug;
+      }
+
+      return $strSlug;
+   }
+
+   function EditPostSlug( $strSlug, $idPost = null, $strPostStatus = null, $strPostType = null, $idPostParent = null ){
+      global $fvseop_options, $wpdb;
+
+      if( !$fvseop_options['aiosp_shorten_name'] )
+         return $strSlug;
+
+      if( !$idPost ){
+         if( isset( $_GET['post'] ) )
+            $idPost = intval( $_GET['post'] );
+         if( isset( $_POST['post_id'] ) )
+            $idPost = intval( $_POST['post_id'] );
+         if( isset( $_POST['post_ID'] ) )
+            $idPost = intval( $_POST['post_ID'] );
+      }
+
+      if( !$idPost )
+         $strSlug = $this->GeneratePostSlug( $strSlug, false );
+      else{
+         $strName = $wpdb->get_var( "SELECT `post_name` FROM `{$wpdb->posts}` WHERE `ID` = $idPost" );
+         if( !$strName )
+            $strSlug = $this->GeneratePostSlug( $strSlug, $idPost );
+      }
+
+      return $strSlug;
+   }
+
+   function SavePostSlug( $aData, $aPostArg ){
+      global $fvseop_options;
+      if( !$fvseop_options['aiosp_shorten_name'] )
+         return $aData;
+
+      if( isset( $aPostArg['post_id'] ) )
+         $idPost = intval( $aPostArg['post_id'] );
+      if( isset( $aPostArg['post_ID'] ) )
+         $idPost = intval( $aPostArg['post_ID'] );
+      if( isset( $aPostArg['ID'] ) )
+         $idPost = intval( $aPostArg['ID'] );
+      if( isset( $aData['ID'] ) )
+         $idPost = intval( $aData['ID'] );
+
+      if( !$aData['post_name'] ){
+         $this->idEmptyPostName = $idPost;
+         $this->strTitleForReference = $aData['post_title'];
+      }
+
+      return $aData;
+   }
+
+   function SanitizeTitleForShortening( $strTitle, $strRawTitle, $strContext ){
+      global $fvseop_options;
+
+      if( !$fvseop_options['aiosp_shorten_name'] 
+         || !$this->idEmptyPostName
+         || 'save' !== $strContext
+         || $strRawTitle != $this->strTitleForReference
+      ){
+         return $strTitle;
+      }
+
+      $strTitle = $this->GeneratePostSlug( $strTitle, $this->idEmptyPostName );
+      return $strTitle;
+   }
+
+
+
+
 
 	/**
 	 * Runs after WordPress admin has finished loading but before any headers are sent.
@@ -1848,15 +1956,15 @@ class FV_Simpler_SEO_Pack
 				"aiosp_home_meta_tags"=>'',
 				'home_google_site_verification_meta_tag' => '',
 				'aiosp_use_tags_as_keywords' => 1,
-				///	Addition
-        'aiosp_search_noindex'=>1,
+            'aiosp_search_noindex'=>1,
 				'aiosp_dont_use_excerpt'=>0,
-				'aiosp_show_keywords'=>0,				
+				'aiosp_show_keywords'=>0,
 				'aiosp_show_titleattribute'=>0,
 				'aiosp_show_disable'=>0,
-				'aiosp_show_custom_canonical'=>0				
-				);
-				///	End of addition
+				'aiosp_show_custom_canonical'=>0,
+            'aiosp_shorten_name' => false,
+            'fvseo_publ_warnings'=>1
+			);
 				
 			update_option('aioseop_options', $res_fvseop_options);
 		}
@@ -1903,12 +2011,14 @@ class FV_Simpler_SEO_Pack
 			$fvseop_options['aiosp_ex_pages'] = isset( $_POST['fvseo_ex_pages'] ) ? $_POST['fvseo_ex_pages'] : NULL;
 			$fvseop_options['aiosp_use_tags_as_keywords'] = isset( $_POST['fvseo_use_tags_as_keywords'] ) ? $_POST['fvseo_use_tags_as_keywords'] : NULL;
 			///	Addition
-      $fvseop_options['aiosp_search_noindex'] = isset( $_POST['fvseo_search_noindex'] ) ? $_POST['fvseo_search_noindex'] : NUUL;
+         $fvseop_options['aiosp_search_noindex'] = isset( $_POST['fvseo_search_noindex'] ) ? $_POST['fvseo_search_noindex'] : NULL;
 			$fvseop_options['aiosp_dont_use_excerpt'] = isset( $_POST['fvseo_dont_use_excerpt'] ) ? $_POST['fvseo_dont_use_excerpt'] : NULL;
 			$fvseop_options['aiosp_show_keywords'] = isset( $_POST['fvseo_show_keywords'] ) ? $_POST['fvseo_show_keywords'] : NULL;
 			$fvseop_options['aiosp_show_custom_canonical'] = isset( $_POST['fvseo_show_custom_canonical'] ) ? $_POST['fvseo_show_custom_canonical'] : NULL;
 			$fvseop_options['aiosp_show_titleattribute'] = isset( $_POST['fvseo_show_titleattribute'] ) ? $_POST['fvseo_show_titleattribute'] : NULL;
 			$fvseop_options['aiosp_show_disable'] = isset( $_POST['fvseo_show_disable'] ) ? $_POST['fvseo_show_disable'] : NULL;
+         $fvseop_options['aiosp_shorten_name'] = isset( $_POST['fvseo_shorten_name'] ) ? true : false;
+         $fvseop_options['fvseo_publ_warnings'] = isset( $_POST['fvseo_publ_warnings'] ) ? $_POST['fvseo_publ_warnings'] : 0;
 			///	End of addition
 
 			update_option('aioseop_options', $fvseop_options);
@@ -1930,9 +2040,15 @@ class FV_Simpler_SEO_Pack
 <?php endif; ?>
   <div id="dropmessage" class="updated" style="display:none;"></div>
   <div class="wrap">
-    <h2>
-      <?php _e('FV All in One SEO Pack Plugin Options', 'fvseo'); ?>
-    </h2>
+      <div style="position: absolute; top: 10px; right: 10px;">
+          <a href="https://foliovision.com/seo-tools/wordpress/plugins/fv-all-in-one-seo-pack" target="_blank" title="Documentation"><img alt="visit foliovision" src="http://foliovision.com/shared/fv-logo.png" /></a>
+      </div>
+      <div>
+          <div id="icon-options-general" class="icon32"><br /></div>
+          <h2>
+          <?php _e('FV All in One SEO Pack Plugin Options', 'fvseo'); ?>
+          </h2>
+      </div>
     <div style="clear:both;"></div>
 <script type="text/javascript">
 function toggleVisibility(id)
@@ -1977,6 +2093,20 @@ function toggleVisibility(id)
                 <div style="max-width:500px; text-align:left; display:none" id="fvseo_home_keywords_tip">
                   <?php _e("A comma separated list of your most important keywords for your site that will be written as META keywords on your homepage. Don't stuff everything in here.", 'fv_seo')?>
                 </div>
+            </p>
+            
+            <p>
+               <a style="cursor:pointer;" title="<?php _e('Click for Help!', 'fv_seo')?>" onclick="toggleVisibility('fvseo_warnings_tip');">
+                  <?php _e('Warn me when publishing without a title or description:', 'fv_seo')?>
+               </a>
+
+               <label for="fvseo_publ_warnings">&nbsp;&nbsp;</label>            
+               <input type="checkbox" name="fvseo_publ_warnings" id="fvseo_publ_warnings" <?php if ( $fvseop_options['fvseo_publ_warnings'] == 1 ) echo 'checked="yes"'; ?> value="1">
+               <label for="fvseo_publ_warnings">&nbsp;&nbsp;</label>
+
+               <div style="max-width:500px; text-align:left; display:none" id="fvseo_warnings_tip">
+                  <?php _e("Uncheck this if you don't want to be warned in case you are publishing without a title or description. Default: checked.", 'fv_seo')?>
+               </div>
             </p>
             
             <p>
@@ -2061,6 +2191,16 @@ function toggleVisibility(id)
                 <div style="max-width:500px; text-align:left; display:none" id="fvseo_can_tip">
                   <?php _e("This option will automatically generate Canonical URLS for your entire WordPress installation.  This will help to prevent duplicate content penalties by <a href='http://googlewebmastercentral.blogspot.com/2009/02/specify-your-canonical.html' target='_blank'>Google</a>.", 'fv_seo')?>
                 </div>
+            </p>
+
+            <p>
+               <a style="cursor:pointer;" title="<?php _e('Click for Help!', 'fv_seo')?>" onclick="toggleVisibility('fvseo_shorten_name');">
+                  <?php _e('Shorten Post / Page name:', 'fv_seo')?>
+               </a>
+               <input type="checkbox" name="fvseo_shorten_name" <?php if ($fvseop_options['aiosp_shorten_name']) echo 'checked="checked"'; ?>/>
+               <div style="max-width:500px; text-align:left; display:none" id="fvseo_shorten_name">
+                  <?php _e("This option will automatically shorten a link to post / page upon first save.", 'fv_seo')?>
+               </div>
             </p>
 
             <p>
@@ -2500,7 +2640,8 @@ function fvseop_mrt_mkarry()
 		'aiosp_dont_use_excerpt'=>0,
 		'aiosp_show_keywords'=>0,
 		'aiosp_show_titleattribute'=>0,
-		'aiosp_show_disable'=>0
+		'aiosp_show_disable'=>0,
+      'fvseo_publ_warnings'=>1
 		);
 		///	End of addition
 
@@ -2579,7 +2720,7 @@ function fvseop_list_pages($content)
 }
 
 function fvseop_filter_callback($matches)
-{        
+{
   preg_match( '~title="([^\"]+)"~', $matches[0], $match_title );
   if( $match_title ) {
     $matches[4] = $match_title[1];
@@ -2607,15 +2748,15 @@ function fvseop_filter_callback($matches)
     $matches[4] = __( $matches[4] );
   }
 		
-	if (!empty($title_attrib)) :
+	if (!empty($title_attrib)){
 		$filtered = '<li class="page_item page-item-' . $postID.$matches[2] . '"><a href="' . esc_attr($matches[3]) . '" title="' . esc_attr($title_attrib) . '">' . esc_html($menulabel) . '</a>';
   /// Addition
-  elseif (!empty($longtitle)) :
+  }elseif (!empty($longtitle)){
           $filtered = '<li class="page_item page-item-' . $postID.$matches[2] . '"><a href="' . esc_attr($matches[3]) . '" title="' . esc_attr($longtitle) . '">' . esc_html($menulabel) . '</a>';
   /// End of addition
-	else :
+	}else{
     	$filtered = '<li class="page_item page-item-' . $postID.$matches[2] . '"><a href="' . esc_attr($matches[3]) . '" title="' . esc_attr($matches[4]) . '">' . esc_html($menulabel) . '</a>';
-	endif;    
+	}    
 	
 	return $filtered;
 }
@@ -2946,6 +3087,16 @@ function fvseo_meta_box_add()
 {
 	add_meta_box('fvsimplerseopack',__('FV Simpler SEO', 'fv_seo'), 'fvseo_meta', 'post');
 	add_meta_box('fvsimplerseopack',__('FV Simpler SEO', 'fv_seo'), 'fvseo_meta', 'page');
+   
+   global $fvseop_options;
+   if ( $fvseop_options['fvseo_publ_warnings'] == 1 ) {
+      add_action('admin_head', 'check_empty_clientside', 1);
+   } else {
+      removetitlechecker();
+   }
+
+if( false === get_option( 'aiosp-shorten-link-install' ) )
+      add_option( 'aiosp-shorten-link-install', date( 'Y-m-d H:i:s' ) );
 }
 
 if ($fvseop_options['aiosp_can'] == '1' || $fvseop_options['aiosp_can'] === 'on')
@@ -2969,4 +3120,112 @@ add_action('save_post', array($fvseo, 'post_meta_tags'));
 add_action('edit_page_form', array($fvseo, 'post_meta_tags'));
 add_action('admin_menu', array($fvseo, 'admin_menu'));
 
+add_filter( 'wp_unique_post_slug', array( $fvseo, 'EditPostSlug' ), 99 );
+add_filter( 'wp_insert_post_data', array( $fvseo, 'SavePostSlug' ), 99, 2 );
+add_filter( 'sanitize_title', array( $fvseo, 'SanitizeTitleForShortening' ), 99, 3 );
+
+//this function removes final periods from post slugs as such urls don't work with nginx; it only gets applied if the "Slugs with periods" plugin has replaced the original sanitize_title function
+function sanitize_title_no_final_period ($title) {
+        $title = strip_tags($title);
+        // Preserve escaped octets.
+        $title = preg_replace('|%([a-fA-F0-9][a-fA-F0-9])|', '---$1---', $title);
+        // Remove percent signs that are not part of an octet.
+        $title = str_replace('%', '', $title);
+        // Restore octets.
+        $title = preg_replace('|---([a-fA-F0-9][a-fA-F0-9])---|', '%$1', $title);
+
+        $title = remove_accents($title);
+        if (seems_utf8($title)) {
+                if (function_exists('mb_strtolower')) {
+                        $title = mb_strtolower($title, 'UTF-8');
+                }
+                $title = utf8_uri_encode($title);
+        }
+
+        $title = strtolower($title);
+        $title = preg_replace('/&.+?;/', '', $title); // kill entities
+        $title = preg_replace('/[^%a-z0-9\. _-]/', '', $title);
+        $title = preg_replace('/\s+/', '-', $title);
+        $title = preg_replace('|-+|', '-', $title);
+        $title = trim($title, '-\.');
+
+        return $title;
+}
+
+function replace_title_sanitization() {
+	if ( has_filter( 'sanitize_title', 'sanitize_title_with_dashes_and_period' ) ) {
+		remove_filter ('sanitize_title', 'sanitize_title_with_dashes_and_period');
+		add_filter ('sanitize_title', 'sanitize_title_no_final_period');
+	}
+}
+
+replace_title_sanitization();
+add_action( 'plugins_loaded', 'replace_title_sanitization' );
+
+function check_empty_clientside() {
+?>
+<script language="javascript" type="text/javascript">
+jQuery(document).ready(function() {
+   var target = null;
+    jQuery('#post :input, #post-preview').focus(function() {
+        target = this;
+        // console.log(target);
+    });
+      
+   jQuery("#post").submit(function(){
+    
+      if(jQuery(target).is(':input') && ( jQuery(target).val() == 'Publish' || jQuery(target).val() == 'Update' ) && jQuery("#title").val() == '') {
+         //console.log(target);
+         alert('Your post\'s TITLE is empty, so it cannot be published!'  );
+         
+         jQuery('#ajax-loading').removeAttr('style');
+         jQuery('#save-post').removeClass('button-disabled');
+         jQuery('#publish').removeClass('button-primary-disabled');
+         return false;
+      } 
+   });
+   
+   jQuery("#publish").hover( function() {// Publish button
+      if (jQuery("#title").val() == '') {
+         jQuery("#major-publishing-actions").append(jQuery(
+            "<div class=\"hovered-warning\" style=\"text-align: left;\"><b><span style=\"color:red;\">Warning</span>: Your post's TITLE is empty!</b></div>"
+         ));
+      } 
+      if (jQuery("#fvseo_description_input").val() == '') {
+         jQuery("#major-publishing-actions").append(jQuery(
+            "<div class=\"hovered-warning\" style=\"text-align: left;\"><b><span style=\"color:red;\">Warning</span>: Your post's DESCRIPTION is empty!</b></div>"
+         ));
+      }
+   }, function() {
+      jQuery(".hovered-warning").remove();
+   });
+   
+   jQuery("#minor-publishing-actions").hover( function() {// Draft, Preview
+      if (jQuery("#title").val() == '') {
+         jQuery(this).append(jQuery(
+            "<div class=\"hovered-warning\" style=\"text-align: left;\"><b><span style=\"color:red;\">Warning</span>: Your post's TITLE is empty!</b></div>"
+         ));
+      }
+      if (jQuery("#fvseo_description_input").val() == '') {
+         jQuery(this).append(jQuery(
+            "<div class=\"hovered-warning\" style=\"text-align: left;\"><b><span style=\"color:red;\">Warning</span>: Your post's DESCRIPTION is empty!</b></div>"
+         ));
+      }
+   }, function() {
+      jQuery(".hovered-warning").remove();
+   });
+});
+</script>
+<?php
+}
+
+function removetitlechecker() {
+   if ( has_action( 'admin_head', 'check_empty_clientside' ) ) {
+      remove_action( 'admin_head', 'check_empty_clientside' );
+   }
+}
+
+if( is_admin() ){
+   register_deactivation_hook( __FILE__, 'removetitlechecker' );
+}
 ?>
