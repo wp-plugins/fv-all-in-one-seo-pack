@@ -47,6 +47,9 @@ Some features:
 
 == Changelog ==
 
+= Version 1.6.19.1 - 31 Jan 2013
+* Bugfix release - URL Shortening has some bugs to fix.
+
 = Version 1.6.19 - 30 Jan 2013 =
 * Added option for noindex and nofollow. Enable in plugin settings extra options first! This option also removes the page from link rel prev/next attributes and WP search.
 * Fix for replacing of menu item labels
