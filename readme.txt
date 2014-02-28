@@ -2,8 +2,8 @@
 Contributors: FolioVision
 Tags: post,google,seo,meta,meta keywords,meta description,title,posts,plugin, search engine optimization
 Requires at least: 3.4
-Tested up to: 3.7.1
-Stable tag: trunk 
+Tested up to: 3.8.1
+Stable tag: 1.6.21 
 
 Simple and effective SEO. Non-invasive, elegant. Ideal for client facing projects.
 
@@ -47,6 +47,12 @@ Some features:
 * Usage of WP post excerpts can be turned off
 
 == Changelog ==
+
+= Version 1.6.22 - 28 Feb 2014 =
+* Feature - added support for translations
+* Feature - Facebook Open Graph support added (on by default)
+* Feature - setting for custom post archive titles
+* Feature - Twitter Cards support added (on by default)
 
 = Version 1.6.21 - 13 Nov 2013 =
 * Feature - Google Authorship and Publisher support. Visit Settings -> FV Simpler SEO -> Social Networking
