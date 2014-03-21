@@ -3,12 +3,12 @@
 Plugin Name: FV Simpler SEO
 Plugin URI: http://foliovision.com/seo-tools/wordpress/plugins/fv-all-in-one-seo-pack
 Description: Simple and effective SEO. Non-invasive, elegant. Ideal for client facing projects. | <a href="options-general.php?page=fv_simpler_seo">Options configuration panel</a>
-Version: 1.6.21.5
+Version: 1.6.22
 Author: Foliovision
 Author URI: http://foliovision.com
 */
 
-$fv_simpler_seo_version = '1.6.21.5';
+$fv_simpler_seo_version = '1.6.22';
 
 $UTF8_TABLES['strtolower'] = array(
 	"Ôº∫" => "ÔΩö",	"Ôºπ" => "ÔΩô",	"Ôº∏" => "ÔΩò",
@@ -1157,7 +1157,7 @@ class FV_Simpler_SEO_Pack extends FV_Simpler_SEO_Plugin
 		///
 		
 		//if ($fvseop_options['aiosp_can'])
-		if ($fvseop_options['aiosp_can'] || ( isset( $custom_canonical ) && $fvseop_options['aiosp_show_custom_canonical']  ) )
+		if ($fvseop_options['aiosp_can'] || ( isset( $custom_canonical ) && isset($fvseop_options['aiosp_show_custom_canonical']) && $fvseop_options['aiosp_show_custom_canonical']  ) )
 		/// End of modification
 		{
 		  if( (isset($custom_canonical) && $custom_canonical) && (isset($fvseop_options['aiosp_show_custom_canonical']) && $fvseop_options['aiosp_show_custom_canonical']) ) {
@@ -2877,7 +2877,7 @@ add_meta_box( 'fv_simpler_seo_advanced', 'Advanced Options', array( $this, 'admi
   
   function initiate_the_title_change() {
     global $fvseop_options;
-    if( $fvseop_options['aiosp_sidebar_short_title'] ) {
+    if( isset($fvseop_options['aiosp_sidebar_short_title']) && $fvseop_options['aiosp_sidebar_short_title'] ) {
         add_filter( 'the_title', array( $this, 'the_title' ) );
     }
   }
@@ -2994,8 +2994,11 @@ add_meta_box( 'fv_simpler_seo_advanced', 'Advanced Options', array( $this, 'admi
       
       $sImage = false;
       if( !isset($fvseop_options['social_meta_facebook']) || $fvseop_options['social_meta_facebook'] || !isset($fvseop_options['social_meta_twitter']) || $fvseop_options['social_meta_twitter'] ) {
-        if( $sImage = get_the_post_thumbnail($post->ID,'thumbnail') ) {
+        if( ($sImage = get_the_post_thumbnail($post->ID)) || ($sImage = get_the_post_thumbnail($post->ID,'thumbnail')) ) {
           $sImage = preg_replace( '~^[\s\S]*src=["\'](.*?)["\'][\s\S]*$~', '$1', $sImage );
+          if( preg_match('~^/[^/]~', $sImage) ) {
+            $sImage = home_url($sImage); 
+          }          
         }
       }
       
@@ -3016,7 +3019,7 @@ add_meta_box( 'fv_simpler_seo_advanced', 'Advanced Options', array( $this, 'admi
   <meta name="twitter:title" content="<?php echo $title; ?>" />
   <meta name="twitter:card" content="summary" />
   <meta name="twitter:description" content="<?php echo $description; ?>" />
-  <?php if($sImage) : ?><meta property="twitter:image" content="<?php echo $sImage; ?>" />
+  <?php if($sImage) : ?><meta name="twitter:image" content="<?php echo $sImage; ?>" />
 <?php endif; ?>
   <meta name="twitter:url" content="<?php the_permalink(); ?>" />
 <?php
@@ -3354,7 +3357,7 @@ function FVSimplerSEO_updateMeta()
 {
   meta = FVSimplerSEO_getLocalized('fvseo_description_input');
   <?php if( !$fvseop_options['aiosp_dont_use_excerpt'] ) : ?>
-  if( meta.replace(/^\s\s*/, '').replace(/\s\s*$/, '').length == 0 ) {
+  if( meta.replace(/^\s\s*/, '').replace(/\s\s*$/, '').length == 0 && jQuery("#excerpt").length > 0 ) {
   	meta = jQuery("#excerpt").val().replace(/<\/?([a-z][a-z0-9]*)\b[^>]*>?/gi, '');  
   }
   <?php endif; ?>
@@ -3380,7 +3383,7 @@ function FVSimplerSEO_updateTitle()
     if( jQuery("#title").val() ) {
       title = jQuery("#title").val();
     } else {
-      title = __('Fill in your title', 'fv_seo');
+      title = '<?php echo __('Fill in your title', 'fv_seo'); ?>';
     }
   }
   url = jQuery("#sample-permalink").text();
@@ -3501,6 +3504,7 @@ jQuery(document).ready(function($) {
              	$fvseo_description_input_description = $meta_description_excerpt;
              	$fvseo_description_input_disabled = true;
             } else {
+              $meta_description_excerpt = false;
             	$fvseo_description_input_description = $description;
             }
             ?>
