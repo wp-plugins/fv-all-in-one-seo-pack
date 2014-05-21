@@ -2,7 +2,7 @@
 Contributors: FolioVision
 Tags: post,google,seo,meta,meta keywords,meta description,title,posts,plugin, search engine optimization
 Requires at least: 3.4
-Tested up to: 3.8.1
+Tested up to: 3.9.1
 Stable tag: trunk
 
 Simple and effective SEO. Non-invasive, elegant. Ideal for client facing projects.
@@ -40,6 +40,9 @@ Some features:
 * noindex and nofollow for each post (also excludes post from search and link rel prev/next attributes)
 
 == Changelog ==
+
+= Version 1.6.24 - 16 May 2014 =
+* Improvement - all images from content are available for Facebook Open Graph now
 
 = Version 1.6.23 - 15 April 2014 =
 * Bugfix - "Use Categories for META keywords" option couldn't be turned on
